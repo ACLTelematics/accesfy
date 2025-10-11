@@ -1,6 +1,6 @@
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║                         PROYECTO ACCESFY                         ║
-# ║                Control de acceso y membresías (v1.2)             ║
+# ║                Control de acceso y membresías (v1.0)             ║
 # ╚══════════════════════════════════════════════════════════════════╝
 **Autor:** AbigailCL 
 **Repositorio:** https://github.com/abigailcl/accesfy  
