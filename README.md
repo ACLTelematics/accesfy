@@ -1,252 +1,110 @@
-# 🏋️‍♂️ ACCESFY GYM SaaS  
-Sistema inteligente para control de accesos y membresías de gimnasios.  
-Versión inicial (v1.2) — Arquitectura técnica y backend Laravel.
+# 🧩 ACCESFY Backend (SaaS para gimnasios)
+
+Plataforma SaaS diseñada para gestionar múltiples gimnasios de forma independiente, con control de usuarios, membresías, asistencia, staff, y backups automáticos.
 
 ---
 
-## 📘 Descripción General
-
-**ACCESFY** es un sistema SaaS diseñado para administrar gimnasios de forma segura y modular.  
-Permite controlar accesos mediante **huella digital o PIN**, gestionar **membresías, paquetes, usuarios y respaldos**.  
-Cada gimnasio opera de forma independiente, pero gestionado globalmente por un **Super Usuario**.
-
----
-
-## 📦 Entorno Técnico (Stack)
-
-| Componente | Tecnología | Descripción |
-|-------------|-------------|--------------|
-| 🧠 Lenguaje backend | **PHP 8.3** | Lenguaje principal |
-| ⚙️ Framework backend | **Laravel 11** | API REST, autenticación y lógica de negocio |
-| 🗄️ Base de datos | **PostgreSQL 16** | Datos de usuarios, membresías y accesos |
-| 🌐 Servidor web | **NGINX + Certbot (SSL)** | Proxy reverso + HTTPS |
-| 🧰 SO / Hosting | **Ubuntu 24.04 LTS (VPS Hetzner)** | Entorno productivo |
-| 🌍 DNS / Dominio | **Namecheap** | Dominio `accesfy.app` y subdominios |
-| 💻 Frontend | **Blade / Vue.js** | Panel administrativo y dashboard |
-| 🔐 Respaldos | **pg_dump diario** | Copias automáticas `/backups/accesfy.sql` |
+## 🚀 Tecnologías Principales
+- **Lenguaje Backend:** PHP 8.3+  
+- **Framework:** Laravel 11  
+- **Base de Datos:** MySQL 8  
+- **Autenticación:** Sanctum / Passport  
+- **Infraestructura:** Hetzner (Servidor) + Namecheap (Dominio)  
+- **Versionado:** GitHub  
+- **Contenedores:** Docker (opcional)  
 
 ---
 
-## 🌍 Infraestructura
+## 🧱 Arquitectura General
 
-╔══════════════════════════════════════════════════════════════════╗
-║ PROYECTO ACCESFY ║
-║ Control de acceso y membresías ║
-╚══════════════════════════════════════════════════════════════════╝
-
-🌐 Namecheap
-─────────────
-Dominio: accesfy.app
-DNS:
-
-A → IP del VPS Hetzner
-
-CNAME → www.accesfy.app
-
-┌──────────────────────────────┐
-│ VPS Hetzner (Ubuntu 24.04) │
-│ IP Pública: xx.xx.xx.xx │
-│ Firewall: 22, 80, 443 │
-│ │
-│ ┌────────────────────────┐ │
-│ │ NGINX + Certbot (SSL) │ │
-│ │ Laravel 11 (PHP 8.3) │ │
-│ │ PostgreSQL 16 │ │
-│ │ API REST HTTPS │ │
-│ └────────────────────────┘ │
-│ │
-│ Backups diarios: /backups/ │
-│ Script: pg_dump accesfy.sql │
-└──────────────────────────────┘
-
-## 🧱 Roles y Jerarquía
-SUPER USER (máximo 3)
-│
-├── ADMINISTRADOR (1 por gimnasio)
-│ ├── Crea staff
-│ ├── Crea paquetes
-│ ├── Gestiona membresías
-│ ├── Hace y restaura backups
-│ └── Enlaza / desenlaza parejas
-│
-├── STAFF
-│ ├── Modifica clientes
-│ ├── Reactiva mensualidades
-│ ├── Enlaza / desenlaza parejas
-│ ├── Hace backups (no restaura)
-│ └── No puede crear usuarios
-│
-└── MIEMBROS
-├── Acceden con huella o PIN
-├── En pareja → comparten PIN
-├── Desenlace → nuevo PIN
-└── 4 intentos fallidos → bloqueo
-
-## 💳 Tipos de Paquetes
-
-| Tipo        | Descripción                         | Configurable por | Compartido |
-|--------------|-------------------------------------|------------------|-------------|
-| Individual   | Acceso único                        | Admin            | ❌ |
-| Pareja       | Dos usuarios enlazados              | Admin / Staff    | ✅ (PIN) |
-| Estudiante   | Descuento especial                  | Admin            | ❌ |
+```ascii
++---------------------+       +-------------------+       +-------------------+
+|  Frontend (React)  | <---> |  API Laravel REST | <---> |  MySQL Database   |
+|  (Accesfy Web App) |       |  (Backend Server) |       | (Usuarios, Gyms)  |
++---------------------+       +-------------------+       +-------------------+
+```
 
 ---
 
-## 🗄️ Estructura de Base de Datos
+## 👥 Roles del Sistema
+
+| Rol | Descripción | Permisos principales |
+|------|--------------|---------------------|
+| **Admin SaaS** | Superadministrador global | Crear, suspender gimnasios, manejar backups globales |
+| **Dueño de Gimnasio** | Propietario del gimnasio | CRUD de miembros, staff, membresías, backups locales |
+| **Staff** | Empleado del gimnasio | Check-in/out de clientes, no puede restaurar backups |
+| **Miembro** | Cliente del gimnasio | Consultar su membresía, historial de asistencia |
 
 ---
 
-## 💳 Tipos de Paquetes
+## 💾 Paquetes disponibles
 
-| Tipo        | Descripción                         | Configurable por | Compartido |
-|--------------|-------------------------------------|------------------|-------------|
-| Individual   | Acceso único                        | Admin            | ❌ |
-| Pareja       | Dos usuarios enlazados              | Admin / Staff    | ✅ (PIN) |
-| Estudiante   | Descuento especial                  | Admin            | ❌ |
+| Plan | Características |
+|------|-----------------|
+| **Individual** | 1 gimnasio, hasta 50 miembros |
+| **Pareja** | 2 gimnasios, hasta 120 miembros |
+| **Estudiantes** | 1 gimnasio pequeño, hasta 30 miembros |
 
----
-
-## 🗄️ Estructura de Base de Datos
-USERS
-
-id (PK)
-
-username
-
-password
-
-role (super, admin, staff, member)
-
-gym_id (FK)
-
-status (active/banned)
-
-created_at
-
-updated_at
-
-GYMS
-
-id (PK)
-
-name
-
-address
-
-phone
-
-PACKAGES
-
-id (PK)
-
-name
-
-price
-
-type (individual, pareja, estudiante)
-
-duration_months
-
-created_by (FK admin)
-
-MEMBERSHIPS
-
-id (PK)
-
-user_id (FK)
-
-package_id (FK)
-
-start_date
-
-end_date
-
-status (active/expired/suspended)
-
-ACCESS_CONTROL
-
-id (PK)
-
-member_id (FK)
-
-access_type (huella, pin)
-
-pin_code
-
-failed_attempts
-
-is_blocked
-
-last_access
-
-BACKUPS
-
-id (PK)
-
-gym_id (FK)
-
-created_by (FK)
-
-file_path
-
-created_at
-
-restored (bool)
+Todos incluyen backups automáticos y manuales (solo restaurables por el dueño o admin).
 
 ---
 
-## ⚙️ API REST
+## 🔗 Endpoints Principales (Resumen)
 
-| Método | Ruta | Descripción | Acceso |
-|--------|-------|--------------|--------|
-| POST | `/api/auth/login` | Inicia sesión | Todos |
-| POST | `/api/auth/logout` | Cierra sesión | Todos |
-| POST | `/api/users/create` | Crear usuario | Super / Admin |
-| PUT | `/api/users/update/:id` | Actualizar usuario | Admin / Staff |
-| DELETE | `/api/users/delete/:id` | Eliminar usuario | Admin |
-| POST | `/api/packages/create` | Crear paquete | Admin |
-| POST | `/api/packages/link-pair` | Enlazar pareja | Admin / Staff |
-| POST | `/api/packages/unlink-pair` | Desenlazar pareja | Admin / Staff |
-| PATCH | `/api/memberships/reactivate` | Reactivar membresía | Admin / Staff |
-| PATCH | `/api/access/unlock/:id` | Desbloquear usuario | Staff |
-| POST | `/api/backups/create` | Crear backup | Admin / Staff |
-| POST | `/api/backups/restore` | Restaurar backup | Solo Admin |
-| POST | `/api/gyms/create` | Crear gimnasio | Super User |
-
----
-
-## 🔐 Política de Seguridad
-
-- Todos los accesos usan HTTPS con **certificados Let's Encrypt** (Certbot).  
-- Las contraseñas se almacenan con **bcrypt** (Laravel Hash).  
-- No se guardan huellas ni imágenes biométricas en la nube.  
-- El sistema usa **roles y permisos** para cada acción (Laravel Gates/Policies).  
+```ascii
+/api/
+├── auth/
+│   ├── login
+│   ├── register
+│   ├── logout
+│   └── refresh
+├── gyms/
+│   ├── create
+│   ├── list
+│   └── suspend/{id}
+├── members/
+│   ├── create
+│   ├── update/{id}
+│   └── checkin
+├── backups/
+│   ├── create
+│   ├── list
+│   └── restore/{id}
+└── plans/
+    └── list
+```
 
 ---
 
-## 💾 Backups
+## 🧰 Instalación (local con Laravel)
 
-| Rol | Crear Backup | Restaurar Backup |
-|------|----------------|------------------|
-| Super User | ✅ | ✅ |
-| Administrador | ✅ | ✅ |
-| Staff | ✅ | ❌ |
-
-Backups automáticos con cron diario:  
 ```bash
-0 3 * * * pg_dump accesfy > /backups/accesfy_$(date +%F).sql *
-🧠 Lógica de Acceso
+git clone https://github.com/tuusuario/accesfy-backend.git
+cd accesfy-backend
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve
+```
 
-Si la huella no funciona → se usa PIN temporal.
+---
 
-En paquetes de pareja → ambos comparten PIN.
+## 🌍 Infraestructura (Hetzner + Namecheap)
 
-Si se desenlazan → se genera nuevo PIN individual.
+- **Namecheap:** Registro del dominio (ej. accesfy.com)  
+- **Hetzner Cloud:** VPS Ubuntu 24.04 con stack LEMP  
+- **Certbot (Let's Encrypt):** SSL automático  
+- **Backups Hetzner:** Configurados diarios + locales (por gimnasio)
 
-4 intentos fallidos → cuenta bloqueada.
+---
 
-Desbloqueo manual por staff o admin.
+## 🧑‍💻 Contribuciones
 
+1. Haz un fork del repositorio.  
+2. Crea una rama (`feature/nueva-funcionalidad`).  
+3. Envía un pull request.  
 
+---
 
-
+© 2025 ACCESFY SaaS
