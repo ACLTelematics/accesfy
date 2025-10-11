@@ -234,6 +234,19 @@ restored (bool)
 
 Backups automáticos con cron diario:  
 ```bash
-0 3 * * * pg_dump accesfy > /backups/accesfy_$(date +%F).sql * * *
+0 3 * * * pg_dump accesfy > /backups/accesfy_$(date +%F).sql *
+🧠 Lógica de Acceso
+
+Si la huella no funciona → se usa PIN temporal.
+
+En paquetes de pareja → ambos comparten PIN.
+
+Si se desenlazan → se genera nuevo PIN individual.
+
+4 intentos fallidos → cuenta bloqueada.
+
+Desbloqueo manual por staff o admin.
+
+
 
 
