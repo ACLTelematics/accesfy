@@ -1,222 +1,135 @@
-# ╔══════════════════════════════════════════════════════════════════╗
-# ║                         PROYECTO ACCESFY                         ║
-# ║                Control de acceso y membresías (v1.0)             ║
-# ╚══════════════════════════════════════════════════════════════════╝
-**Autor:** AbigailCL 
-**Repositorio:** https://github.com/abigailcl/accesfy  
-**Versión:** 1.2  
-**Fecha:** 2025-10-09  
+# 📘 Especificación Técnica Backend - ACCESFY SaaS
+
+Versión: 1.0 
+Framework: Laravel 11  
+DB: MySQL 8  
+Infraestructura: Hetzner Cloud + Namecheap
 
 ---
 
-## 🧩 1. ESQUEMA TÉCNICO GENERAL
+## 🧩 Arquitectura
 
-╔══════════════════════════════════════════════════════════════════╗
-║ ROLES ║
-╠══════════════════════════════════════════════════════════════════╣
-║ SUPER USER (2 cuentas) ║
-║ ├─ Crea gimnasios ║
-║ ├─ Crea/da de baja administradores ║
-║ ├─ Accede a todo el sistema ║
-║ └─ Tiene usuario y contraseña ║
-║ ║
-║ ADMINISTRADOR DEL GYM ║
-║ ├─ 1 por gimnasio ║
-║ ├─ Puede crear usuarios staff ║
-║ ├─ Puede crear/modificar paquetes ║
-║ ├─ Puede hacer y restaurar backups ║
-║ ├─ Puede reactivar, eliminar o editar miembros ║
-║ ├─ Puede enlazar/desenlazar parejas ║
-║ └─ Accede con usuario y contraseña (no correo) ║
-║ ║
-║ STAFF DEL GYM (varios) ║
-║ ├─ Creados por el administrador ║
-║ ├─ Pueden editar, borrar o reactivar membresías ║
-║ ├─ Pueden hacer backups ║
-║ ├─ No pueden restaurar backups ║
-║ ├─ Pueden enlazar/desenlazar parejas ║
-║ └─ No pueden crear otros staff ║
-║ ║
-║ MIEMBROS DEL GYM ║
-║ ├─ Registrados por admin o staff ║
-║ ├─ Acceden con huella o PIN ║
-║ ├─ PIN compartido si es pareja ║
-║ ├─ Si se desenlazan, el PIN cambia ║
-║ ├─ 4 intentos erróneos bloquean al miembro ║
-║ └─ Recepción (staff) puede desbloquear ║
-╚══════════════════════════════════════════════════════════════════╝
-
+```ascii
+Frontend (React / Next.js)
+     ↓ REST API
+Backend (Laravel 11)
+     ↓
+Database (MySQL 8)
+```
 
 ---
 
-## 🗄️ 2. ESQUEMA DE BASE DE DATOS
+## 🗂️ Módulos Principales
 
-╔══════════════════════════════════════════════════════════════════╗
-║ TABLAS PRINCIPALES ║
-╠══════════════════════════════════════════════════════════════════╣
-║ gyms ║
-║ ├─ id (PK) ║
-║ ├─ name ║
-║ ├─ address ║
-║ ├─ created_by (FK → users.id) ║
-║ └─ timestamps ║
-║ ║
-║ users ║
-║ ├─ id (PK) ║
-║ ├─ username (único) ║
-║ ├─ password_hash ║
-║ ├─ role (super, admin, staff) ║
-║ ├─ gym_id (FK → gyms.id, nullable si superuser) ║
-║ └─ timestamps ║
-║ ║
-║ members ║
-║ ├─ id (PK) ║
-║ ├─ gym_id (FK → gyms.id) ║
-║ ├─ name ║
-║ ├─ phone ║
-║ ├─ pin (único por gym) ║
-║ ├─ fingerprint_template (local, no nube) ║
-║ ├─ package_id (FK → packages.id) ║
-║ ├─ is_active (bool) ║
-║ ├─ is_blocked (bool) ║
-║ ├─ linked_member_id (FK → members.id, nullable) ║
-║ └─ timestamps ║
-║ ║
-║ packages ║
-║ ├─ id (PK) ║
-║ ├─ gym_id (FK → gyms.id) ║
-║ ├─ name (Individual, Pareja, Estudiante, etc.) ║
-║ ├─ price ║
-║ ├─ duration_days ║
-║ └─ timestamps ║
-║ ║
-║ attendance ║
-║ ├─ id (PK) ║
-║ ├─ member_id (FK → members.id) ║
-║ ├─ checkin_time ║
-║ ├─ verified_by (staff_id FK → users.id) ║
-║ └─ timestamps ║
-║ ║
-║ backups ║
-║ ├─ id (PK) ║
-║ ├─ gym_id (FK → gyms.id) ║
-║ ├─ created_by (FK → users.id) ║
-║ ├─ file_path (/backups/accesfy_<fecha>.sql) ║
-║ ├─ can_restore (bool — solo admin) ║
-║ └─ timestamps ║
-╚══════════════════════════════════════════════════════════════════╝
+### 1. Autenticación
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `POST /api/auth/refresh`
 
+Middleware: `auth:sanctum`  
+Roles: Admin, Owner, Staff, Member
+
+### 2. Gimnasios
+- `POST /api/gyms/create` → Crea un nuevo gimnasio.
+- `GET /api/gyms/list` → Lista todos los gimnasios (según permisos).
+- `PATCH /api/gyms/suspend/{id}` → Suspende un gimnasio.
+
+Modelo: `Gym`  
+Relaciones: `hasMany(Member)`, `hasMany(Staff)`
+
+### 3. Miembros
+- `POST /api/members/create`
+- `PATCH /api/members/update/{id}`
+- `POST /api/members/checkin`
+
+Modelo: `Member`  
+Relaciones: `belongsTo(Gym)`
+
+### 4. Backups
+- `POST /api/backups/create` → Crear backup local o remoto.
+- `GET /api/backups/list` → Listar backups del gimnasio.
+- `POST /api/backups/restore/{id}` → Restaurar (solo owner o admin).
+
+Modelo: `Backup`  
+Campos: `gym_id`, `file_path`, `created_at`
 
 ---
 
-## 🌐 3. ESQUEMA DE RUTAS API REST (Laravel 11)
+## 💾 Estructura de Base de Datos
 
+```ascii
+[users]
+- id
+- name
+- email
+- password
+- role (admin, owner, staff, member)
 
+[gyms]
+- id
+- name
+- owner_id
+- plan_type
+- status (active/suspended)
 
-╔══════════════════════════════════════════════════════════════════╗
-║ AUTENTICACIÓN ║
-╠══════════════════════════════════════════════════════════════════╣
-POST /api/login → Login (usuario+contraseña)
-POST /api/logout → Cerrar sesión
-GET /api/profile → Obtener datos del usuario actual
+[members]
+- id
+- gym_id
+- name
+- membership_type
+- checkins_count
 
-╔══════════════════════════════════════════════════════════════════╗
-║ GIMNASIOS ║
-╠══════════════════════════════════════════════════════════════════╣
-GET /api/gyms → [Super] Listar gimnasios
-POST /api/gyms → [Super] Crear gimnasio
-DELETE /api/gyms/{id} → [Super] Eliminar gimnasio
+[staff]
+- id
+- gym_id
+- name
+- role
 
-╔══════════════════════════════════════════════════════════════════╗
-║ USUARIOS ║
-╠══════════════════════════════════════════════════════════════════╣
-GET /api/users → [Admin/Super] Listar usuarios
-POST /api/users → [Admin/Super] Crear usuario (staff)
-PATCH /api/users/{id} → [Admin/Super] Editar usuario
-DELETE /api/users/{id} → [Super] Eliminar usuario
-
-╔══════════════════════════════════════════════════════════════════╗
-║ MIEMBROS ║
-╠══════════════════════════════════════════════════════════════════╣
-GET /api/members → [Admin/Staff] Listar miembros
-POST /api/members → [Admin/Staff] Registrar miembro
-PATCH /api/members/{id} → [Admin/Staff] Editar miembro
-DELETE /api/members/{id} → [Admin/Staff] Eliminar miembro
-PATCH /api/members/{id}/link → [Admin/Staff] Enlazar pareja
-PATCH /api/members/{id}/unlink → [Admin/Staff] Desenlazar pareja
-PATCH /api/members/{id}/reactivate → [Admin/Staff] Reactivar membresía
-PATCH /api/members/{id}/unblock → [Admin/Staff] Desbloquear PIN
-
-╔══════════════════════════════════════════════════════════════════╗
-║ PAQUETES ║
-╠══════════════════════════════════════════════════════════════════╣
-GET /api/packages → [Admin/Staff] Ver paquetes
-POST /api/packages → [Admin] Crear paquete
-PATCH /api/packages/{id} → [Admin] Editar paquete
-DELETE /api/packages/{id} → [Admin] Eliminar paquete
-
-╔══════════════════════════════════════════════════════════════════╗
-║ ASISTENCIA ║
-╠══════════════════════════════════════════════════════════════════╣
-POST /api/attendance → [Local SDK] Registrar asistencia
-GET /api/attendance → [Admin/Staff] Consultar registros
-
-╔══════════════════════════════════════════════════════════════════╗
-║ BACKUPS ║
-╠══════════════════════════════════════════════════════════════════╣
-POST /api/backups → [Admin/Staff] Crear backup
-GET /api/backups → [Admin/Staff] Listar backups
-POST /api/backups/{id}/restore → [Admin] Restaurar backup
-DELETE /api/backups/{id} → [Admin/Super] Eliminar backup
-
-
+[backups]
+- id
+- gym_id
+- file_path
+- created_at
+```
 
 ---
 
-## ⚙️ 4. LÓGICA DE NEGOCIO Y VALIDACIONES
+## 🧰 Comandos Artisan útiles
 
-╔══════════════════════════════════════════════════════════════════╗
-║ REGLAS CLAVE ║
-╠══════════════════════════════════════════════════════════════════╣
-║ - Todos los usuarios acceden por usuario y contraseña (no email). ║
-║ - El super user crea gimnasios y sus administradores. ║
-║ - Cada gimnasio tiene 1 administrador y varios staff. ║
-║ - El staff no puede crear otros staff ni restaurar backups. ║
-║ - El admin puede crear paquetes y gestionar staff. ║
-║ - Paquetes iniciales: Individual, Pareja, Estudiante. ║
-║ - En paquetes de pareja comparten PIN. ║
-║ - Si se desenlazan, el PIN se regenera automáticamente. ║
-║ - 4 intentos fallidos de PIN → bloqueo automático. ║
-║ - El staff puede desbloquear manualmente al miembro. ║
-║ - Las huellas no se envían a la nube. Solo se guarda el ID. ║
-║ - Backups se generan en /backups/accesfy_<fecha>.sql ║
-║ - Staff puede generar backups, admin puede restaurarlos. ║
-╚══════════════════════════════════════════════════════════════════╝
-
+```bash
+php artisan make:model Gym -mcr
+php artisan make:model Member -mcr
+php artisan make:controller API/AuthController
+php artisan migrate --seed
+```
 
 ---
 
-## 📦 5. ESTRUCTURA DE CARPETAS LARAVEL (SUGERIDA)
-
-accesfy/
-├── app/
-│ ├── Http/
-│ │ ├── Controllers/
-│ │ └── Middleware/
-│ ├── Models/
-│ └── Policies/
-├── database/
-│ ├── migrations/
-│ └── seeders/
-├── routes/
-│ └── api.php
-├── storage/
-│ └── backups/
-├── .env
-└── composer.json
-
+## 🔒 Políticas de seguridad
+- Encriptación de contraseñas con `bcrypt()`  
+- Tokens de sesión via `Sanctum`  
+- Middleware `role:admin|owner`  
+- Validaciones vía `FormRequest`  
+- Backups cifrados (`storage/app/backups/`)
 
 ---
 
-## ✅ FIN DEL DOCUMENTO
+## ☁️ Infraestructura Hetzner + Namecheap
 
+- VPS Ubuntu 24.04, 2vCPU, 4GB RAM  
+- Nginx + PHP-FPM  
+- Certbot SSL automatizado  
+- Backup diario automático + local por gimnasio  
+- Dominio en Namecheap apuntando a Hetzner IP
+
+---
+
+## 🧩 Integración futura
+- Envío de correos vía Mailgun o SES  
+- Pagos Stripe (planes SaaS)  
+- API para app móvil (Flutter o React Native)
+
+---
+
+© 2025 ACCESFY — Documento técnico interno.
