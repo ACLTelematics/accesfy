@@ -1,0 +1,48 @@
+Notas
+
+🧩 1️⃣ Opción Ideal: Entorno de Pruebas (Staging)
+
+💻 Un entorno igual al de producción, pero solo para ti.
+
+Tendrías dos entornos en tu servidor Hetzner:
+
+backend.accesfy.com → producción (usuarios reales)
+
+staging.accesfy.com → tus pruebas
+
+Ambas usan el mismo código base, pero con diferentes bases de datos y archivos .env.
+
+Ventajas:
+
+Pruebas online, desde cualquier lugar.
+
+No rompes la versión real.
+
+Puedes probar actualizaciones antes de subirlas a producción.
+
+Cómo hacerlo:
+
+Crea una subcarpeta o subdominio en tu servidor:
+
+/var/www/accesfy-staging
+
+
+Copia tu repositorio:
+
+git clone https://github.com/tuusuario/accesfy-backend.git accesfy-staging
+
+
+Crea un .env aparte:
+
+APP_NAME="ACCESFY Staging"
+DB_DATABASE=accesfy_staging
+APP_URL=https://staging.accesfy.com
+
+
+Configura un host Nginx para ese subdominio y genera SSL:
+
+sudo certbot --nginx -d staging.accesfy.com
+
+
+✅ Resultado:
+Puedes entrar a https://staging.accesfy.com/api y probar libremente sin afectar el sistema real.
