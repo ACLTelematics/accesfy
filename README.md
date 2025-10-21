@@ -13,18 +13,11 @@ Plataforma SaaS diseñada para gestionar múltiples gimnasios de forma independi
 - **Versionado:** GitHub  
 - **Contenedores:** Docker (opcional)  
 
----
-
 ## 🧱 Arquitectura General
-
-```ascii
 +---------------------+       +-------------------+       +-------------------+
 |  Frontend (React)  | <---> |  API Laravel REST | <---> |  MySQL Database   |
 |  (Accesfy Web App) |       |  (Backend Server) |       | (Usuarios, Gyms)  |
 +---------------------+       +-------------------+       +-------------------+
-```
-
----
 
 ## 👥 Roles del Sistema
 
@@ -186,7 +179,6 @@ Plataforma SaaS diseñada para gestionar múltiples gimnasios de forma independi
 
 ### 🕸️ Relaciones principales
 
-```ascii
 Admin SaaS (user.role=admin)
         |
         +--> Gyms ---< Members (users.role=member)
@@ -213,7 +205,6 @@ Todos incluyen backups automáticos y manuales (solo restaurables por el dueño 
 
 ## 🔗 Endpoints Principales (Resumen)
 
-```ascii
 /api/
 ├── auth/
 │   ├── login
@@ -234,13 +225,10 @@ Todos incluyen backups automáticos y manuales (solo restaurables por el dueño 
 │   └── restore/{id}
 └── plans/
     └── list
-```
 
----
 
 ## 🧰 Instalación (local con Laravel)
 
-```bash
 git clone https://github.com/tuusuario/accesfy-backend.git
 cd accesfy-backend
 composer install
@@ -248,9 +236,7 @@ cp .env.example .env
 php artisan key:generate
 php artisan migrate --seed
 php artisan serve
-```
 
----
 
 ## 🌍 Infraestructura (Hetzner + Namecheap)
 
