@@ -1,0 +1,79 @@
+                           ┌──────────────────────────┐
+                           │      SUPER_USERS         │
+                           ├──────────────────────────┤
+                           │ id (PK)                 │
+                           │ name                    │
+                           │ email (UNIQUE)          │
+                           │ password                │
+                           │ active (bool)           │
+                           │ created_at / updated_at │
+                           └────────────┬─────────────┘
+                                        │ 1..*
+                                        │
+                                        ▼
+                           ┌──────────────────────────┐
+                           │       GYM_OWNERS         │
+                           ├──────────────────────────┤
+                           │ id (PK)                 │
+                           │ super_user_id (FK)      │
+                           │ name                    │
+                           │ email (UNIQUE)          │
+                           │ password                │
+                           │ active (bool)           │
+                           │ activated_until (date)  │
+                           │ gym_name                │
+                           │ created_at / updated_at │
+                           └────────────┬─────────────┘
+                     ┌─────────────────┼──────────────────┐
+                     │                 │                  │
+                     ▼                 ▼                  ▼
+
+       ┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
+       │        STAFF         │   │       CLIENTS        │   │     MEMBERSHIPS      │
+       ├──────────────────────┤   ├──────────────────────┤   ├──────────────────────┤
+       │ id (PK)             │   │ id (PK)             │   │ id (PK)              │
+       │ gym_owner_id (FK)   │   │ gym_owner_id (FK)   │   │ gym_owner_id (FK)    │
+       │ name                │   │ name                │   │ type (ENUM)          │
+       │ email (UNIQUE)      │   │ email               │   │ price (decimal)      │
+       │ password            │   │ phone               │   │ description          │
+       │ active (bool)       │   │ active (bool)       │   │ active (bool)        │
+       │ created_at          │   │ membership_expires  │   │ created_at           │
+       └──────────┬──────────┘   │ membership_id (FK)  │   └──────────┬───────────┘
+                  │              │ created_at          │              │
+                  │              └────────────┬────────┘              │
+                  │                           │                       │
+                  ▼                           ▼                       ▼
+
+     ┌──────────────────────┐    ┌──────────────────────┐    ┌──────────────────────┐
+     │     ATTENDANCES      │    │       PAYMENTS       │    │       BACKUPS        │
+     ├──────────────────────┤    ├──────────────────────┤    ├──────────────────────┤
+     │ id (PK)             │    │ id (PK)             │    │ id (PK)              │
+     │ client_id (FK)      │    │ gym_owner_id (FK)   │    │ gym_owner_id (FK)    │
+     │ staff_id (FK)       │    │ client_id (FK)      │    │ created_by (FK)      │
+     │ check_in (datetime) │    │ staff_id (FK)       │    │ file_path            │
+     │ check_out (datetime)│    │ amount (decimal)    │    │ restorable (bool)    │
+     │ status              │    │ method (cash/other) │    │ created_at           │
+     │ created_at          │    │ note (text)         │    └──────────────────────┘
+     └──────────────────────┘    │ created_at          │
+                                 └──────────┬──────────┘
+                                            │
+                                            ▼
+                            ┌────────────────────────────┐
+                            │      ACTIVITY_LOGS         │
+                            ├────────────────────────────┤
+                            │ id (PK)                   │
+                            │ gym_owner_id (FK)         │
+                            │ user_id (FK)              │
+                            │ action                    │
+                            │ description               │
+                            │ created_at                │
+                            └────────────────────────────┘
+
+                               ┌────────────────────────┐
+                               │       SETTINGS         │
+                               ├────────────────────────┤
+                               │ id (PK)               │
+                               │ gym_owner_id (FK)     │
+                               │ key                   │
+                               │ value                 │
+                               └────────────────────────┘
