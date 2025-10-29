@@ -5,19 +5,22 @@ Plataforma SaaS diseñada para gestionar múltiples gimnasios de forma independi
 ---
 
 ## 🚀 Tecnologías Principales
-- **Lenguaje Backend:** PHP 8.3+  
-- **Framework:** Laravel 11  
-- **Base de Datos:** MySQL 8  
-- **Autenticación:** Sanctum / Passport  
-- **Infraestructura:** Hetzner (Servidor) + Namecheap (Dominio)  
-- **Versionado:** GitHub  
-- **Contenedores:** Docker (opcional)  
+-⚙️ Tecnologías Principales
+
+Lenguaje Backend: PHP 8.3+
+Framework: Laravel 11
+Base de Datos: PostgreSQL 16
+Autenticación: Laravel Sanctum / Passport
+Infraestructura: Hetzner (Servidor) + Namecheap (Dominio)
+Versionado: GitHub
+Contenedores: Docker (opcional) 
 
 ## 🧱 Arquitectura General
-+---------------------+       +-------------------+       +-------------------+
-|  Frontend (React)  | <---> |  API Laravel REST | <---> |  MySQL Database   |
-|  (Accesfy Web App) |       |  (Backend Server) |       | (Usuarios, Gyms)  |
-+---------------------+       +-------------------+       +-------------------+
++---------------------+       +-------------------+       +----------------------+
+|   Frontend (React)  | <---> |  API Laravel REST | <---> |  PostgreSQL Database |
+|  (Accesfy Web App)  |       |  (Backend Server) |       |  (Usuarios, Gyms)    |
++---------------------+       +-------------------+       +----------------------+
+
 
 ## 👥 Roles del Sistema
 
