@@ -232,7 +232,7 @@ Todos incluyen backups automáticos y manuales (solo restaurables por el dueño 
 
 ## 🧰 Instalación (local con Laravel)
 
-git clone https://github.com/tuusuario/accesfy-backend.git
+git clone https://github.com/acltelematics/accesfy-backend.git
 cd accesfy-backend
 composer install
 cp .env.example .env
@@ -247,3 +247,4 @@ php artisan serve
 - **Hetzner Cloud:** VPS Ubuntu 24.04 con stack LEMP  
 - **Certbot (Let's Encrypt):** SSL automático  
 - **Backups Hetzner:** Configurados diarios + locales (por gimnasio)
+
