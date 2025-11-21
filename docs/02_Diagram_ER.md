@@ -135,6 +135,3 @@
 * **gym_owner 1 ─── N settings**
 * **clients (parejas)**: related_client_id → clients.id
 
----
-
-Si quieres agregar el **diagrama visual**, actualizar nombres, agregar nuevas entidades o generar el archivo para subirlo a GitHub, solo dímelo.
