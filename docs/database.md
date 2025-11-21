@@ -210,6 +210,4 @@ Configuración por gimnasio.
 * Cada entidad mantiene trazabilidad mediante logs y backups.
 * La autenticación se gestiona internamente sin necesidad de emails de recuperación.
 
----
 
-¿Deseas agregar un **diagrama visual** (SVG / PNG) dentro del documento?
