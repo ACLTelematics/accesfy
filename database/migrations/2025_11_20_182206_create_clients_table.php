@@ -39,6 +39,11 @@ return new class extends Migration
                   ->constrained('clients')
                   ->nullOnDelete();
 
+            // Biometría - Fingerprint/PIN (local hardware)
+            $table->text('fingerprint_hash')->nullable();
+            $table->string('pin_hash', 255)->nullable();
+            $table->boolean('biometric_enabled')->default(false);
+
             $table->timestamps();
         });
     }
