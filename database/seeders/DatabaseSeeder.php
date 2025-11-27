@@ -13,6 +13,9 @@ class DatabaseSeeder extends Seeder
             GymOwnerSeeder::class,
             StaffSeeder::class,
             MembershipSeeder::class,
+            ClientSeeder::class,
+            AttendanceSeeder::class,
+            PaymentSeeder::class,
         ]);
     }
 }
