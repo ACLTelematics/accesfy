@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
-class GymOwner extends Model
+class GymOwner extends Authenticatable
 {
+    use HasFactory, HasApiTokens;
     protected $fillable = [
         'super_user_id',
         'name',

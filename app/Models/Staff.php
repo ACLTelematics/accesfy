@@ -2,16 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
-class Staff extends Model
+class Staff extends Authenticatable
 {
+    use HasFactory, HasApiTokens;
     protected $fillable = [
         'gym_owner_id',
         'name',
         'email',
         'password',
         'active',
+    ];
+
+    protected $hidden = [
+        'password',
     ];
 
     protected $casts = [

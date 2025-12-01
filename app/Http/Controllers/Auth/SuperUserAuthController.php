@@ -1,0 +1,56 @@
+<?php
+
+namespace App\Http\Controllers\Auth;
+
+use App\Http\Controllers\Controller;
+use App\Models\SuperUser;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+
+class SuperUserAuthController extends Controller
+{
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        $superUser = SuperUser::where('email', $request->email)->first();
+
+        if (!$superUser || !Hash::check($request->password, $superUser->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Las credenciales son incorrectas.'],
+            ]);
+        }
+
+        if (!$superUser->active) {
+            throw ValidationException::withMessages([
+                'email' => ['Tu cuenta está inactiva.'],
+            ]);
+        }
+
+        $token = $superUser->createToken('super-user-token')->plainTextToken;
+
+        return response()->json([
+            'user' => $superUser,
+            'token' => $token,
+            'token_type' => 'Bearer',
+        ]);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Sesión cerrada exitosamente',
+        ]);
+    }
+
+    public function me(Request $request)
+    {
+        return response()->json($request->user());
+    }
+}
