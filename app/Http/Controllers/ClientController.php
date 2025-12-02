@@ -9,12 +9,15 @@ class ClientController extends Controller
 {
     public function index()
     {
+        $this->authorize('viewAny', Client::class);
+        
         $clients = Client::with('gymOwner', 'membership', 'attendances', 'payments')->get();
         return response()->json($clients);
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', Client::class);
         $validated = $request->validate([
             'gym_owner_id' => 'required|exists:gym_owners,id',
             'name' => 'required|string|max:150',
@@ -38,12 +41,15 @@ class ClientController extends Controller
 
     public function show(Client $client)
     {
+        $this->authorize('view', $client);
+        
         $client->load('gymOwner', 'membership', 'attendances', 'payments', 'relatedClient');
         return response()->json($client);
     }
 
     public function update(Request $request, Client $client)
     {
+        $this->authorize('update', $client);
         $validated = $request->validate([
             'name' => 'sometimes|string|max:150',
             'email' => 'sometimes|nullable|email',
@@ -65,6 +71,8 @@ class ClientController extends Controller
 
     public function destroy(Client $client)
     {
+        $this->authorize('delete', $client);
+        
         $client->delete();
 
         return response()->json(null, 204);

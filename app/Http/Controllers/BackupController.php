@@ -61,10 +61,7 @@ class BackupController extends Controller
 
     public function apply(Backup $backup)
     {
-        // Solo SuperUser puede aplicar backups
-        if (auth()->user()->cannot('applyBackup', $backup)) {
-            return response()->json(['error' => 'No tienes permiso para aplicar backups'], 403);
-        }
+        $this->authorize('apply', $backup);
 
         $backup->update([
             'is_applied' => true,
