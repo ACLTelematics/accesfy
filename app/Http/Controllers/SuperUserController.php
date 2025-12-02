@@ -10,12 +10,15 @@ class SuperUserController extends Controller
 {
     public function index()
     {
+        $this->authorize('viewAny', SuperUser::class);
+        
         $superUsers = SuperUser::all();
         return response()->json($superUsers);
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', SuperUser::class);
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:super_users',

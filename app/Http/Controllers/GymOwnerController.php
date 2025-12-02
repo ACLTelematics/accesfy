@@ -10,12 +10,15 @@ class GymOwnerController extends Controller
 {
     public function index()
     {
+        $this->authorize('viewAny', GymOwner::class);
+        
         $gymOwners = GymOwner::with('superUser')->get();
         return response()->json($gymOwners);
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', GymOwner::class);
         $validated = $request->validate([
             'super_user_id' => 'required|exists:super_users,id',
             'name' => 'required|string|max:100',
@@ -35,12 +38,15 @@ class GymOwnerController extends Controller
 
     public function show(GymOwner $gymOwner)
     {
+        $this->authorize('view', $gymOwner);
+        
         $gymOwner->load('superUser', 'staff', 'clients', 'memberships');
         return response()->json($gymOwner);
     }
 
     public function update(Request $request, GymOwner $gymOwner)
     {
+        $this->authorize('update', $gymOwner);
         $validated = $request->validate([
             'name' => 'sometimes|string|max:100',
             'email' => 'sometimes|email|unique:gym_owners,email,' . $gymOwner->id,
@@ -61,6 +67,8 @@ class GymOwnerController extends Controller
 
     public function destroy(GymOwner $gymOwner)
     {
+        $this->authorize('delete', $gymOwner);
+        
         $gymOwner->delete();
 
         return response()->json(null, 204);

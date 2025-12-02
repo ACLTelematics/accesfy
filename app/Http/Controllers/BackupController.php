@@ -11,12 +11,15 @@ class BackupController extends Controller
 {
     public function index()
     {
+        $this->authorize('viewAny', Backup::class);
+        
         $backups = Backup::with('gymOwner', 'createdBy', 'appliedBy')->get();
         return response()->json($backups);
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', Backup::class);
         $validated = $request->validate([
             'gym_owner_id' => 'required|exists:gym_owners,id',
             'file_path' => 'required|string',
@@ -37,12 +40,15 @@ class BackupController extends Controller
 
     public function show(Backup $backup)
     {
+        $this->authorize('view', $backup);
+        
         $backup->load('gymOwner', 'createdBy', 'appliedBy');
         return response()->json($backup);
     }
 
     public function update(Request $request, Backup $backup)
     {
+        $this->authorize('update', $backup);
         $validated = $request->validate([
             'restorable' => 'sometimes|boolean',
         ]);
@@ -54,6 +60,8 @@ class BackupController extends Controller
 
     public function destroy(Backup $backup)
     {
+        $this->authorize('delete', $backup);
+        
         $backup->delete();
 
         return response()->json(null, 204);
