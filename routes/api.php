@@ -41,41 +41,42 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // GymOwner Routes
-Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::apiResource('gym-owners', GymOwnerController::class);
 });
 
 // Staff Routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::apiResource('staff', StaffController::class);
 });
 
 // Client Routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::apiResource('clients', ClientController::class);
 });
 
 // Membership Routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::apiResource('memberships', MembershipController::class);
 });
 
 // Attendance Routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::apiResource('attendances', AttendanceController::class);
     Route::post('attendances/check-in', [AttendanceController::class, 'checkIn']);
     Route::post('attendances/{attendance}/check-out', [AttendanceController::class, 'checkOut']);
 });
 
 // Payment Routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::apiResource('payments', PaymentController::class);
     Route::get('payments/client/{clientId}', [PaymentController::class, 'getByClient']);
     Route::get('payments/gym-owner/{gymOwnerId}', [PaymentController::class, 'getByGymOwner']);
 });
 
+
 // Backup Routes
-Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::apiResource('backups', BackupController::class);
     Route::post('backups/{backup}/apply', [BackupController::class, 'apply']);
     Route::get('backups/gym-owner/{gymOwnerId}', [BackupController::class, 'getByGymOwner']);
