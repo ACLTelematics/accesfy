@@ -81,3 +81,12 @@ Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::post('backups/{backup}/apply', [BackupController::class, 'apply']);
     Route::get('backups/gym-owner/{gymOwnerId}', [BackupController::class, 'getByGymOwner']);
 });
+
+// Dashboard Routes
+    Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
+    Route::get('dashboard/stats', [DashboardController::class, 'stats']);
+    Route::get('dashboard/recent-activity', [DashboardController::class, 'recentActivity']);
+    Route::get('dashboard/expiring-members', [DashboardController::class, 'expiringMembers']);
+    Route::get('dashboard/membership-distribution', [DashboardController::class, 'membershipDistribution']);
+    Route::get('dashboard/peak-hours', [DashboardController::class, 'peakHours']);
+});
