@@ -90,3 +90,9 @@ Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::get('dashboard/membership-distribution', [DashboardController::class, 'membershipDistribution']);
     Route::get('dashboard/peak-hours', [DashboardController::class, 'peakHours']);
 });
+// Notification Routes
+    Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::post('notifications/{id}/mark-read', [NotificationController::class, 'markAsRead']);
+    Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+});
