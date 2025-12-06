@@ -80,3 +80,20 @@ class ClientController extends Controller
         return response()->json(null, 204);
     }
 }
+    public function search(Request $request)
+{
+        $query = $request->input('query');
+        $gymOwnerId = $request->user()->gym_owner_id ?? $request->user()->id;
+
+         $clients = Client::where('gym_owner_id', $gymOwnerId)
+        ->where(function ($q) use ($query) {
+            $q->where('name', 'like', "%{$query}%")
+              ->orWhere('email', 'like', "%{$query}%")
+              ->orWhere('phone', 'like', "%{$query}%");
+        })
+        ->with('membership')
+        ->limit(20)
+        ->get();
+
+    return ClientResource::collection($clients);
+}

@@ -11,6 +11,7 @@ class Client extends Model
         'name',
         'email',
         'phone',
+        'gender',
         'active',
         'membership_expires',
         'membership_id',

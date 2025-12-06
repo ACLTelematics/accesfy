@@ -96,3 +96,43 @@ Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::post('notifications/{id}/mark-read', [NotificationController::class, 'markAsRead']);
     Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
 });
+// Client Search Routes
+    Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
+    Route::apiResource('clients', ClientController::class);
+    Route::get('clients/search', [ClientController::class, 'search']); // Agregar esta línea
+});
+
+// Gender Distribution Routes
+    Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
+    Route::get('dashboard/stats', [DashboardController::class, 'stats']);
+    Route::get('dashboard/recent-activity', [DashboardController::class, 'recentActivity']);
+    Route::get('dashboard/expiring-members', [DashboardController::class, 'expiringMembers']);
+    Route::get('dashboard/membership-distribution', [DashboardController::class, 'membershipDistribution']);
+    Route::get('dashboard/peak-hours', [DashboardController::class, 'peakHours']);
+    Route::get('dashboard/gender-distribution', [DashboardController::class, 'genderDistribution']); // Agregar esta línea
+});
+// Settings Routes
+    Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
+    Route::get('settings', [SettingsController::class, 'index']);
+    Route::post('settings', [SettingsController::class, 'update']);
+    Route::get('settings/{key}', [SettingsController::class, 'get']);
+});
+// Settings Routes
+    Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
+    Route::get('settings', [SettingsController::class, 'index']);
+    Route::post('settings', [SettingsController::class, 'update']);
+    Route::get('settings/{key}', [SettingsController::class, 'get']);
+    Route::post('settings/logo', [SettingsController::class, 'uploadLogo']); // Agregar esta línea
+});
+// Staff Routes
+    Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
+    Route::apiResource('staff', StaffController::class);
+    Route::post('staff/{staff}/reset-password', [StaffController::class, 'resetPassword']);
+    Route::get('gym-owner/staff', [StaffController::class, 'getByGymOwner']);
+});
+// Membership Routes
+    Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
+    Route::apiResource('memberships', MembershipController::class);
+    Route::get('gym-owner/memberships', [MembershipController::class, 'getByGymOwner']);
+    Route::post('memberships/{membership}/toggle-active', [MembershipController::class, 'toggleActive']);
+});

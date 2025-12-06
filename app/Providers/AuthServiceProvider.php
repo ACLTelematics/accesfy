@@ -19,6 +19,7 @@ class AuthServiceProvider extends ServiceProvider
         GymOwner::class => GymOwnerPolicy::class,
         Client::class => ClientPolicy::class,
         Backup::class => BackupPolicy::class,
+        Membership::class => MembershipPolicy::class, 
     ];
 
     public function boot(): void
