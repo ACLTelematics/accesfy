@@ -44,6 +44,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../services/api'
 
 const router = useRouter()
 const username = ref('')
@@ -56,14 +57,20 @@ const handleLogin = async () => {
   error.value = ''
 
   try {
-    console.log('Login:', username.value, password.value)
+    // Llamar al API de Laravel
+    const response = await api.post('/auth/gym-owner/login', {
+      username: username.value,
+      password: password.value,
+    })
 
-    // Simular login exitoso (temporal)
-    setTimeout(() => {
-      router.push('/dashboard')
-    }, 1000)
-  } catch (err) {
-    error.value = 'Credenciales incorrectas'
+    // Guardar token
+    localStorage.setItem('token', response.data.token)
+    localStorage.setItem('user', JSON.stringify(response.data.user))
+
+    // Redirigir al dashboard
+    router.push('/dashboard')
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'Credenciales incorrectas'
   } finally {
     loading.value = false
   }
@@ -82,10 +89,11 @@ const handleLogin = async () => {
 }
 
 .logo {
-  width: 250x;
+  width: 250px;
   height: 100px;
   margin: 0 auto 2rem;
   display: block;
+  object-fit: contain;
 }
 
 .input-field {
