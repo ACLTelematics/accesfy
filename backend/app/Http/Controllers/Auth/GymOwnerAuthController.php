@@ -17,7 +17,7 @@ class GymOwnerAuthController extends Controller
             'password' => 'required',
         ]);
 
-        $gymOwner = GymOwner::where('email', $request->email)->first();
+        $gymOwner = GymOwner::where('username', $request->username)->first();
 
         if (!$gymOwner || !Hash::check($request->password, $gymOwner->password)) {
             throw ValidationException::withMessages([
@@ -27,13 +27,13 @@ class GymOwnerAuthController extends Controller
 
         if (!$gymOwner->active) {
             throw ValidationException::withMessages([
-                'email' => ['Tu cuenta está inactiva.'],
+                'username' => ['Tu cuenta está inactiva.'],
             ]);
         }
 
         if ($gymOwner->activated_until && $gymOwner->activated_until < now()) {
             throw ValidationException::withMessages([
-                'email' => ['Tu cuenta ha expirado.'],
+                'username' => ['Tu cuenta ha expirado.'],
             ]);
         }
 

@@ -16,9 +16,9 @@ class GymOwnerSeeder extends Seeder
         GymOwner::create([
             'super_user_id' => $superUser->id,
             'name' => 'rochosgym',
-            'email' => 'carlos@gimnasio1.com',
+            'email' => 'bella@rochosgym.com',
             'username' => 'bellagym',
-            'password' => Hash::make('$4dm1n'),
+            'password' => Hash::make('admin123'),
             'active' => true,
             'activated_until' => now()->addMonths(12),
             'gym_name' => 'Rochos Muscle Gym',
