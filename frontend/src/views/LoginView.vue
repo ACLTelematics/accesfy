@@ -13,6 +13,7 @@
             placeholder="Usuario"
             required
             class="input-field"
+            :disabled="authStore.loading"
           />
         </div>
         <div>
@@ -22,15 +23,16 @@
             placeholder="Contraseña"
             required
             class="input-field"
+            :disabled="authStore.loading"
           />
         </div>
 
-        <button type="submit" :disabled="loading" class="btn-primary w-full">
-          {{ loading ? 'Ingresando...' : 'Entrar' }}
+        <button type="submit" :disabled="authStore.loading" class="btn-primary w-full">
+          {{ authStore.loading ? 'Ingresando...' : 'Entrar' }}
         </button>
 
-        <div v-if="error" class="error-message">
-          {{ error }}
+        <div v-if="authStore.error" class="error-message">
+          {{ authStore.error }}
         </div>
       </form>
 
@@ -43,36 +45,19 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import api from '../services/api'
+import { useAuthStore } from '@/stores/auth'
 
-const router = useRouter()
+const authStore = useAuthStore()
 const username = ref('')
 const password = ref('')
-const loading = ref(false)
-const error = ref('')
 
 const handleLogin = async () => {
-  loading.value = true
-  error.value = ''
-
   try {
-    // Llamar al API de Laravel
-    const response = await api.post('/auth/gym-owner/login', {
-      username: username.value,
-      password: password.value,
-    })
-
-    // Guardar token
-    localStorage.setItem('token', response.data.token)
-    localStorage.setItem('user', JSON.stringify(response.data.user))
-
-    // Redirigir al dashboard
-    router.push('/dashboard')
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Credenciales incorrectas'
-  } finally {
-    loading.value = false
+    await authStore.login(username.value, password.value)
+    // La redirección se hace automáticamente en el store
+  } catch (err) {
+    // El error se maneja en el store
+    console.error('Error en login:', err)
   }
 }
 </script>
@@ -114,6 +99,11 @@ const handleLogin = async () => {
 
 .input-field:focus {
   background-color: rgba(255, 255, 255, 0.15);
+}
+
+.input-field:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-primary {

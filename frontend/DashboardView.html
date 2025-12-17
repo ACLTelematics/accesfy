@@ -1,0 +1,321 @@
+<template>
+    <div class="p-6">
+        <!-- Header with time -->
+        <div class="mb-8 flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-white mb-2">Bienvenido de vuelta 👋</h1>
+                <p class="text-gray-400">Aquí está lo que sucede en tu gimnasio hoy</p>
+            </div>
+            <div class="text-right">
+                <div class="text-3xl font-bold text-yellow-500">{{ currentTime }}</div>
+                <div class="text-sm text-gray-500">{{ currentDate }}</div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div v-if="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div
+                v-for="(stat, idx) in stats"
+                :key="idx"
+                class="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 hover:border-yellow-500/50 transition-all duration-300"
+            >
+                <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600">
+                        <component :is="stat.icon" class="w-8 h-8 text-black" />
+                    </div>
+                </div>
+                <div class="text-gray-400 text-sm mb-2">{{ stat.title }}</div>
+                <div class="text-5xl font-bold text-yellow-500 mb-2">{{ stat.value }}</div>
+                <div class="text-gray-600 text-sm">{{ stat.subtitle }}</div>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div v-if="loading" class="flex items-center justify-center py-20">
+            <div
+                class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"
+            ></div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div v-if="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Hourly Access Chart -->
+            <div class="lg:col-span-2 bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-white">Accesos por Hora</h2>
+                    <div class="flex items-center gap-2 text-sm text-gray-400">
+                        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <span>Últimos 7 días</span>
+                    </div>
+                </div>
+
+                <div v-if="peakHours.length > 0" class="flex items-end justify-between h-64 gap-2">
+                    <div
+                        v-for="(item, idx) in peakHours"
+                        :key="idx"
+                        class="flex-1 flex flex-col items-center gap-2"
+                    >
+                        <div class="relative w-full flex-1 flex items-end">
+                            <div
+                                :style="{ height: `${(item.count / maxPeakCount) * 100}%` }"
+                                class="w-full bg-gradient-to-t from-yellow-500 to-yellow-600 rounded-t-lg transition-all duration-500 hover:from-yellow-400 hover:to-yellow-500 cursor-pointer group"
+                            >
+                                <div
+                                    class="absolute -top-8 left-1/2 -translate-x-1/2 text-xs font-semibold text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    {{ item.count }}
+                                </div>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500 font-medium">{{ item.range }}</span>
+                    </div>
+                </div>
+
+                <div v-else class="h-64 flex items-center justify-center text-gray-500">
+                    No hay datos disponibles
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
+                <h2 class="text-xl font-bold text-white mb-6">Actividad Reciente</h2>
+                <div v-if="recentActivity.length > 0" class="space-y-4">
+                    <div
+                        v-for="(activity, idx) in recentActivity"
+                        :key="idx"
+                        class="flex items-center gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-lg hover:border-zinc-700 transition-colors"
+                    >
+                        <div
+                            class="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center text-black font-bold"
+                        >
+                            {{ activity.client_name.charAt(0) }}
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-white text-sm font-medium">
+                                {{ activity.client_name }}
+                            </div>
+                            <div class="text-gray-500 text-xs">{{ activity.check_in }}</div>
+                        </div>
+                        <div
+                            :class="[
+              'px-2 py-1 rounded-full text-xs font-medium',
+              activity.status === 'active'
+                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+            ]"
+                        >
+                            {{ activity.status === 'active' ? 'Activo' : 'Completado' }}
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="text-center text-gray-500 py-8">Sin actividad reciente</div>
+            </div>
+        </div>
+
+        <!-- Bottom Section -->
+        <div v-if="!loading" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Expiring Memberships -->
+            <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-white">Membresías por Vencer</h2>
+                    <div
+                        v-if="expiringMembers.length > 0"
+                        class="px-3 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full text-sm font-medium"
+                    >
+                        {{ expiringMembers.length }} alertas
+                    </div>
+                </div>
+                <div v-if="expiringMembers.length > 0" class="space-y-3">
+                    <div
+                        v-for="(member, idx) in expiringMembers"
+                        :key="idx"
+                        class="flex items-center justify-between p-4 bg-zinc-900 border border-zinc-800 rounded-lg hover:border-zinc-700 transition-colors"
+                    >
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold"
+                            >
+                                {{ member.name.charAt(0) }}
+                            </div>
+                            <div>
+                                <div class="text-white text-sm font-medium">{{ member.name }}</div>
+                                <div class="text-gray-500 text-xs">
+                                    {{ formatDate(member.membership_expires) }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-orange-400 text-sm font-semibold">
+                                {{ member.days_left }} días
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="text-center text-gray-500 py-8">
+                    No hay membresías por vencer
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
+                <h2 class="text-xl font-bold text-white mb-6">Distribución de Membresías</h2>
+                <div v-if="membershipDistribution.length > 0" class="space-y-4">
+                    <div
+                        v-for="(item, idx) in membershipDistribution"
+                        :key="idx"
+                        class="flex items-center justify-between p-4 bg-zinc-900 border border-zinc-800 rounded-lg"
+                    >
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="p-2 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg"
+                            >
+                                <CreditCard class="w-5 h-5 text-black" />
+                            </div>
+                            <span class="text-gray-300 capitalize">{{ item.type }}</span>
+                        </div>
+                        <span class="text-2xl font-bold text-yellow-500">{{ item.count }}</span>
+                    </div>
+                </div>
+                <div v-else class="text-center text-gray-500 py-8">Sin datos de membresías</div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script setup lang="ts">
+    import { ref, onMounted, computed } from 'vue'
+    import api from '@/services/api'
+    import { Users, Activity, Dumbbell, Calendar, CreditCard } from 'lucide-vue-next'
+
+    interface Stats {
+        active_members: number
+        accesses_today: number
+        current_occupancy: number
+        expiring_soon: number
+    }
+
+    interface RecentActivity {
+        client_name: string
+        check_in: string
+        status: 'active' | 'completed'
+    }
+
+    interface ExpiringMember {
+        id: number
+        name: string
+        membership_expires: string
+        days_left: number
+    }
+
+    interface PeakHour {
+        range: string
+        count: number
+    }
+
+    interface MembershipDist {
+        type: string
+        count: number
+    }
+
+    const loading = ref(true)
+    const stats = ref<any[]>([])
+    const recentActivity = ref<RecentActivity[]>([])
+    const expiringMembers = ref<ExpiringMember[]>([])
+    const peakHours = ref<PeakHour[]>([])
+    const membershipDistribution = ref<MembershipDist[]>([])
+
+    const currentTime = ref('')
+    const currentDate = ref('')
+
+    const maxPeakCount = computed(() => {
+        if (peakHours.value.length === 0) return 1
+        return Math.max(...peakHours.value.map((h) => h.count))
+    })
+
+    const updateTime = () => {
+        const now = new Date()
+        currentTime.value = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+        currentDate.value = now.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+        })
+    }
+
+    const formatDate = (dateStr: string) => {
+        const date = new Date(dateStr)
+        return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+    }
+
+    const loadDashboardData = async () => {
+        loading.value = true
+        try {
+            // Cargar todas las estadísticas en paralelo
+            const [statsRes, activityRes, expiringRes, peakHoursRes, distRes] = await Promise.all([
+                api.get<Stats>('/dashboard/stats'),
+                api.get<RecentActivity[]>('/dashboard/recent-activity'),
+                api.get<ExpiringMember[]>('/dashboard/expiring-members'),
+                api.get<Record<string, number>>('/dashboard/peak-hours'),
+                api.get<MembershipDist[]>('/dashboard/membership-distribution'),
+            ])
+
+            // Stats
+            const statsData = statsRes.data
+            stats.value = [
+                {
+                    title: 'Miembros Activos',
+                    value: statsData.active_members,
+                    subtitle: 'Con membresía vigente',
+                    icon: Users,
+                },
+                {
+                    title: 'Accesos Hoy',
+                    value: statsData.accesses_today,
+                    subtitle: 'Check-ins registrados',
+                    icon: Activity,
+                },
+                {
+                    title: 'Ocupación Actual',
+                    value: statsData.current_occupancy,
+                    subtitle: 'Personas dentro',
+                    icon: Dumbbell,
+                },
+                {
+                    title: 'Por Vencer',
+                    value: statsData.expiring_soon,
+                    subtitle: 'Próximos 7 días',
+                    icon: Calendar,
+                },
+            ]
+
+            // Recent Activity
+            recentActivity.value = activityRes.data
+
+            // Expiring Members
+            expiringMembers.value = expiringRes.data
+
+            // Peak Hours
+            const peakData = peakHoursRes.data
+            peakHours.value = Object.entries(peakData).map(([range, count]) => ({
+                range,
+                count: count as number,
+            }))
+
+            // Membership Distribution
+            membershipDistribution.value = distRes.data
+        } catch (error) {
+            console.error('Error cargando datos del dashboard:', error)
+        } finally {
+            loading.value = false
+        }
+    }
+
+    onMounted(() => {
+        updateTime()
+        setInterval(updateTime, 1000)
+        loadDashboardData()
+
+        // Actualizar datos cada 30 segundos
+        setInterval(loadDashboardData, 30000)
+    })
+</script>
