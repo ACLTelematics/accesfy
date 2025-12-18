@@ -7,7 +7,7 @@
         <div class="flex flex-col gap-2">
           <img src="/logo.png" alt="Accesfy" class="h-10 w-auto object-contain" />
           <div class="border-t border-zinc-700 pt-2">
-            <h2 class="text-lg font-bold text-yellow-500">{{ authStore.gymName }}</h2>
+            <h2 class="text-lg font-bold text-yellow-500">{{ authStore.gymName || 'Accesfy' }}</h2>
             <p class="text-xs text-gray-500">Sistema de Gestión</p>
           </div>
         </div>
@@ -19,7 +19,7 @@
           <div class="text-xs font-semibold text-gray-500 uppercase mb-3 px-3">Menú Principal</div>
           <nav class="space-y-1">
             <router-link
-              v-for="item in navItems"
+              v-for="item in visibleNavItems"
               :key="item.name"
               :to="item.path"
               :class="[
@@ -38,7 +38,9 @@
 
       <!-- Bottom Section -->
       <div class="p-4 border-t border-zinc-800">
+        <!-- Configuración -->
         <router-link
+          v-if="permissions.canViewSettings"
           to="/dashboard/settings"
           :class="[
             'flex items-center gap-3 px-4 py-3 rounded-lg transition-all mb-4 text-base font-medium',
@@ -51,6 +53,7 @@
           <span>Configuración</span>
         </router-link>
 
+        <!-- User Info -->
         <div
           class="flex items-center gap-3 px-3 py-3 bg-zinc-900 rounded-lg border border-zinc-800"
         >
@@ -61,10 +64,11 @@
           </div>
           <div class="flex-1">
             <div class="text-sm font-medium text-white">{{ authStore.userName }}</div>
-            <div class="text-xs text-gray-500">Administrador</div>
+            <div class="text-xs text-gray-500">{{ roleName }}</div>
           </div>
         </div>
 
+        <!-- Logout -->
         <button
           @click="handleLogout"
           class="w-full mt-3 px-3 py-2 text-sm text-gray-400 hover:text-red-400 transition-all text-left"
@@ -83,7 +87,7 @@
 
           <div class="flex items-center gap-3">
             <!-- Notificaciones -->
-            <div class="relative">
+            <div v-if="permissions.canViewNotifications" class="relative">
               <button
                 class="p-2 bg-zinc-900 border border-zinc-800 rounded-lg hover:bg-zinc-800 transition-all relative"
               >
@@ -99,6 +103,7 @@
 
             <!-- Botón Nuevo Cliente -->
             <router-link
+              v-if="permissions.canCreateClient"
               to="/dashboard/clients/new"
               class="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg font-medium transition-all"
             >
@@ -119,6 +124,7 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { usePermissions } from '@/composables/usePermissions'
 import {
   LayoutDashboard,
   Users,
@@ -134,25 +140,75 @@ import {
 
 const route = useRoute()
 const authStore = useAuthStore()
+const permissions = usePermissions()
 
-const navItems = [
-  { name: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { name: 'clients', path: '/dashboard/clients', label: 'Miembros', icon: Users },
-  { name: 'memberships', path: '/dashboard/memberships', label: 'Membresías', icon: CreditCard },
-  { name: 'staff', path: '/dashboard/staff', label: 'Staff', icon: UsersRound },
-  { name: 'payments', path: '/dashboard/payments', label: 'Pagos', icon: DollarSign },
+// Todos los items del menú con sus permisos
+const allNavItems = [
+  {
+    name: 'dashboard',
+    path: '/dashboard',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    permission: () => permissions.canViewDashboard.value,
+  },
+  {
+    name: 'clients',
+    path: '/dashboard/clients',
+    label: 'Miembros',
+    icon: Users,
+    permission: () => permissions.canViewClients.value,
+  },
+  {
+    name: 'memberships',
+    path: '/dashboard/memberships',
+    label: 'Membresías',
+    icon: CreditCard,
+    permission: () => permissions.canViewMemberships.value,
+  },
+  {
+    name: 'staff',
+    path: '/dashboard/staff',
+    label: 'Staff',
+    icon: UsersRound,
+    permission: () => permissions.canViewStaff.value,
+  },
+  {
+    name: 'payments',
+    path: '/dashboard/payments',
+    label: 'Pagos',
+    icon: DollarSign,
+    permission: () => permissions.canViewPayments.value,
+  },
   {
     name: 'notifications',
     path: '/dashboard/notifications',
     label: 'Notificaciones',
     icon: Bell,
+    permission: () => permissions.canViewNotifications.value,
   },
-  { name: 'reports', path: '/dashboard/reports', label: 'Reportes', icon: FileText },
-  { name: 'backups', path: '/dashboard/backups', label: 'Respaldos', icon: Database },
+  {
+    name: 'reports',
+    path: '/dashboard/reports',
+    label: 'Reportes',
+    icon: FileText,
+    permission: () => permissions.canViewReports.value,
+  },
+  {
+    name: 'backups',
+    path: '/dashboard/backups',
+    label: 'Respaldos',
+    icon: Database,
+    permission: () => permissions.canCreateBackup.value,
+  },
 ]
 
+// Filtrar items visibles según permisos
+const visibleNavItems = computed(() => {
+  return allNavItems.filter((item) => item.permission())
+})
+
 const pageTitle = computed(() => {
-  const item = navItems.find((i) => i.name === route.name)
+  const item = allNavItems.find((i) => i.name === route.name)
   if (item) return item.label
   if (route.name === 'settings') return 'Configuración'
   return 'Dashboard'
@@ -166,6 +222,16 @@ const userInitials = computed(() => {
     return (parts[0][0] + parts[1][0]).toUpperCase()
   }
   return name.substring(0, 2).toUpperCase()
+})
+
+const roleName = computed(() => {
+  const roleNames = {
+    super_user: 'Super Admin',
+    gym_owner: 'Administrador',
+    staff: 'Staff',
+    client: 'Cliente',
+  }
+  return roleNames[authStore.userRole as keyof typeof roleNames] || 'Usuario'
 })
 
 const notificationCount = ref(0)

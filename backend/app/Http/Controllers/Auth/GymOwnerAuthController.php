@@ -43,6 +43,7 @@ class GymOwnerAuthController extends Controller
             'user' => $gymOwner,
             'token' => $token,
             'token_type' => 'Bearer',
+            'role' => 'gym_owner'
         ]);
     }
 

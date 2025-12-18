@@ -17,7 +17,7 @@ class StaffAuthController extends Controller
             'password' => 'required',
         ]);
 
-        $staff = Staff::where('email', $request->email)->first();
+        $staff = Staff::where('username', $request->username)->first();
 
         if (!$staff || !Hash::check($request->password, $staff->password)) {
             throw ValidationException::withMessages([
@@ -37,6 +37,7 @@ class StaffAuthController extends Controller
             'user' => $staff,
             'token' => $token,
             'token_type' => 'Bearer',
+            'role' => 'staff'
         ]);
     }
 

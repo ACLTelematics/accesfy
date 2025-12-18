@@ -19,7 +19,7 @@ class StaffSeeder extends Seeder
                 'gym_owner_id' => $gymOwner->id,
                 'name' => 'Recepcionista ' . $gymOwner->gym_name,
                 'email' => 'recepcion' . $gymOwner->id . '@' . strtolower(str_replace(' ', '', $gymOwner->gym_name)) . '.com',
-                'username' => 'staff' . $counter++,
+                'username' => 'karyna' . $counter++,
                 'password' => Hash::make('r0ch0*'),
                 'active' => true,
             ]);

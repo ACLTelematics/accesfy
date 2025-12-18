@@ -17,7 +17,7 @@ class SuperUserAuthController extends Controller
             'password' => 'required',
         ]);
 
-        $superUser = SuperUser::where('email', $request->email)->first();
+        $superUser = SuperUser::where('username', $request->username)->first();
 
         if (!$superUser || !Hash::check($request->password, $superUser->password)) {
             throw ValidationException::withMessages([
@@ -37,6 +37,7 @@ class SuperUserAuthController extends Controller
             'user' => $superUser,
             'token' => $token,
             'token_type' => 'Bearer',
+            'role' => 'super_user'
         ]);
     }
 

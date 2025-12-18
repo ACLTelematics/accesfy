@@ -1,0 +1,23 @@
+[90m= [39m[34;4mIlluminate\Database\Eloquent\Collection[39;24m {#2092
+    [34mall[39m: [
+      [34;4mApp\Models\GymOwner[39;24m {#6592
+        [34mid[39m: [35m1[39m,
+        [34musername[39m: "[32mbellagym[39m",
+        [34memail[39m: "[32mbella@rochosgym.com[39m",
+        [34mgym_name[39m: "[32mRochos Muscle Gym[39m",
+      },
+      [34;4mApp\Models\GymOwner[39;24m {#6591
+        [34mid[39m: [35m2[39m,
+        [34musername[39m: "[32mmariagym[39m",
+        [34memail[39m: "[32mmaria@gimnasio2.com[39m",
+        [34mgym_name[39m: "[32mPower Gym[39m",
+      },
+      [34;4mApp\Models\GymOwner[39;24m {#6590
+        [34mid[39m: [35m3[39m,
+        [34musername[39m: "[32mjuangym[39m",
+        [34memail[39m: "[32mjuan@gimnasio3.com[39m",
+        [34mgym_name[39m: "[32mCrossFit Zone[39m",
+      },
+    ],
+  }
+
