@@ -11,6 +11,7 @@ class Membership extends Model
         'type',
         'price',
         'description',
+        'duration_days',    // ← NUEVO
         'daily_payment',
         'active',
     ];
@@ -19,6 +20,7 @@ class Membership extends Model
         'daily_payment' => 'boolean',
         'active' => 'boolean',
         'price' => 'decimal:2',
+        'duration_days' => 'integer',  // ← NUEVO
     ];
 
     public function gymOwner()

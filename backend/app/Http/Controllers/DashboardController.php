@@ -130,25 +130,26 @@ class DashboardController extends Controller
 
         return response()->json($peakHours);
     }
-}
-public function genderDistribution(Request $request)
-{
-    $gymOwnerId = $request->user()->gym_owner_id ?? $request->user()->id;
 
-    $distribution = Client::where('gym_owner_id', $gymOwnerId)
-        ->where('active', true)
-        ->select('gender', DB::raw('count(*) as count'))
-        ->groupBy('gender')
-        ->get()
-        ->mapWithKeys(function ($item) {
-            $label = match($item->gender) {
-                'male' => 'Hombres',
-                'female' => 'Mujeres',
-                'other' => 'Otro',
-                default => 'Sin especificar'
-            };
-            return [$label => $item->count];
-        });
+    public function genderDistribution(Request $request)
+    {
+        $gymOwnerId = $request->user()->gym_owner_id ?? $request->user()->id;
 
-    return response()->json($distribution);
-}
+        $distribution = Client::where('gym_owner_id', $gymOwnerId)
+            ->where('active', true)
+            ->select('gender', DB::raw('count(*) as count'))
+            ->groupBy('gender')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                $label = match($item->gender) {
+                    'male' => 'Hombres',
+                    'female' => 'Mujeres',
+                    'other' => 'Otro',
+                    default => 'Sin especificar'
+                };
+                return [$label => $item->count];
+            });
+
+        return response()->json($distribution);
+    }
+} // ← ✅ LLAVE QUE FALTABA

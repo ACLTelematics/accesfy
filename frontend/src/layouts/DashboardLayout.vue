@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-black">
+  <div class="flex min-h-screen bg-black">
     <!-- Sidebar -->
     <div class="w-72 bg-zinc-950 border-r border-zinc-800 flex flex-col">
       <!-- Logo -->
@@ -159,11 +159,11 @@ const allNavItems = [
     permission: () => permissions.canViewClients.value,
   },
   {
-    name: 'memberships',
-    path: '/dashboard/memberships',
-    label: 'Membresías',
-    icon: CreditCard,
-    permission: () => permissions.canViewMemberships.value,
+    name: 'payments-memberships',
+    path: '/dashboard/payments-memberships',
+    label: 'Pagos y Membresías',
+    icon: DollarSign,
+    permission: () => permissions.canViewPayments.value || permissions.canViewMemberships.value,
   },
   {
     name: 'staff',
@@ -171,13 +171,6 @@ const allNavItems = [
     label: 'Staff',
     icon: UsersRound,
     permission: () => permissions.canViewStaff.value,
-  },
-  {
-    name: 'payments',
-    path: '/dashboard/payments',
-    label: 'Pagos',
-    icon: DollarSign,
-    permission: () => permissions.canViewPayments.value,
   },
   {
     name: 'notifications',
@@ -211,6 +204,7 @@ const pageTitle = computed(() => {
   const item = allNavItems.find((i) => i.name === route.name)
   if (item) return item.label
   if (route.name === 'settings') return 'Configuración'
+  if (route.name === 'clients-new') return 'Nuevo Miembro'
   return 'Dashboard'
 })
 
@@ -218,7 +212,7 @@ const userInitials = computed(() => {
   const name = authStore.userName
   if (!name) return '?'
   const parts = name.split(' ')
-  if (parts.length >= 2) {
+  if (parts.length >= 2 && parts[0] && parts[1]) {
     return (parts[0][0] + parts[1][0]).toUpperCase()
   }
   return name.substring(0, 2).toUpperCase()

@@ -2,51 +2,51 @@
 
 namespace App\Policies;
 
-use App\Models\SuperUser;
-use App\Models\GymOwner;
 use App\Models\Membership;
-use Illuminate\Auth\Access\HandlesAuthorization;
+use App\Models\GymOwner;
+use App\Models\Staff;
+use App\Models\SuperUser;
 
 class MembershipPolicy
 {
-    use HandlesAuthorization;
-
-    public function viewAny($user)
+    public function viewAny($user): bool
     {
-        return $user instanceof SuperUser 
-            || $user instanceof GymOwner;
+        return true; // Todos pueden ver
     }
 
-    public function view($user, Membership $membership)
+    public function view($user, Membership $membership): bool
+    {
+        return true; // Todos pueden ver una membresía
+    }
+
+    public function create($user): bool
+    {
+        return $user instanceof SuperUser || $user instanceof GymOwner;
+    }
+
+    public function update($user, Membership $membership): bool
     {
         if ($user instanceof SuperUser) {
             return true;
         }
 
-        return $user instanceof GymOwner && $user->id === $membership->gym_owner_id;
+        if ($user instanceof GymOwner) {
+            return $membership->gym_owner_id === $user->id;
+        }
+
+        return false;
     }
 
-    public function create($user)
-    {
-        return $user instanceof SuperUser 
-            || $user instanceof GymOwner;
-    }
-
-    public function update($user, Membership $membership)
+    public function delete($user, Membership $membership): bool
     {
         if ($user instanceof SuperUser) {
             return true;
         }
 
-        return $user instanceof GymOwner && $user->id === $membership->gym_owner_id;
-    }
-
-    public function delete($user, Membership $membership)
-    {
-        if ($user instanceof SuperUser) {
-            return true;
+        if ($user instanceof GymOwner) {
+            return $membership->gym_owner_id === $user->id;
         }
 
-        return $user instanceof GymOwner && $user->id === $membership->gym_owner_id;
+        return false;
     }
 }

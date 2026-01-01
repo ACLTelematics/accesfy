@@ -11,6 +11,15 @@ const router = createRouter({
       component: LoginView,
       meta: { requiresGuest: true },
     },
+
+    // ✅ RUTA INDEPENDIENTE DE CHECK-IN (fuera del dashboard)
+    {
+      path: '/checkin',
+      name: 'checkin-standalone',
+      component: () => import('../views/CheckInView.vue'),
+      meta: { requiresAuth: true },
+    },
+
     {
       path: '/dashboard',
       component: () => import('../layouts/DashboardLayout.vue'),
@@ -21,11 +30,12 @@ const router = createRouter({
           name: 'dashboard',
           component: () => import('../views/DashboardView.vue'),
         },
-        {
-          path: 'checkin',
-          name: 'checkin',
-          component: () => import('../views/CheckInView.vue'),
-        },
+        // ❌ COMENTAR ESTA (la del dashboard con sidebar)
+        // {
+        //   path: 'checkin',
+        //   name: 'checkin',
+        //   component: () => import('../views/CheckInView.vue'),
+        // },
         {
           path: 'clients',
           name: 'clients',
@@ -36,20 +46,16 @@ const router = createRouter({
           name: 'clients-new',
           component: () => import('../views/ClientFormView.vue'),
         },
-        {
-          path: 'memberships',
-          name: 'memberships',
-          component: () => import('../views/MembershipsListView.vue'),
-        },
+
         {
           path: 'staff',
           name: 'staff',
           component: () => import('../views/StaffListView.vue'),
         },
         {
-          path: 'payments',
-          name: 'payments',
-          component: () => import('../views/PaymentsView.vue'),
+          path: 'payments-memberships',
+          name: 'payments-memberships',
+          component: () => import('../views/PaymentsAndMembershipsView.vue'),
         },
         {
           path: 'settings',
@@ -65,7 +71,7 @@ const router = createRouter({
     },
     {
       path: '/',
-      redirect: '/dashboard',
+      redirect: '/login', // ← Cambié a /login en lugar de /dashboard
     },
   ],
 })

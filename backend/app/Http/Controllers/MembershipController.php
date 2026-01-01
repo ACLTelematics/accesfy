@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Membership;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class MembershipController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index()
     {
         $this->authorize('viewAny', Membership::class);
-        
+
         $memberships = Membership::with('gymOwner', 'clients')->get();
         return response()->json($memberships);
     }
@@ -18,12 +21,13 @@ class MembershipController extends Controller
     public function store(Request $request)
     {
         $this->authorize('create', Membership::class);
-        
+
         $validated = $request->validate([
             'gym_owner_id' => 'required|exists:gym_owners,id',
-            'type' => 'required|in:individual,couple,student,custom,visit',
+            'type' => 'required|in:individual,couple,student,custom,visit,weekly,biweekly,quarterly,semiannual,annual',
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
+            'duration_days' => 'required|integer|min:1',
             'daily_payment' => 'sometimes|boolean',
             'active' => 'sometimes|boolean',
         ]);
@@ -39,7 +43,7 @@ class MembershipController extends Controller
     public function show(Membership $membership)
     {
         $this->authorize('view', $membership);
-        
+
         $membership->load('gymOwner', 'clients');
         return response()->json($membership);
     }
@@ -47,11 +51,12 @@ class MembershipController extends Controller
     public function update(Request $request, Membership $membership)
     {
         $this->authorize('update', $membership);
-        
+
         $validated = $request->validate([
-            'type' => 'sometimes|in:individual,couple,student,custom,visit',
+            'type' => 'sometimes|in:individual,couple,student,custom,visit,weekly,biweekly,quarterly,semiannual,annual',
             'price' => 'sometimes|numeric|min:0',
             'description' => 'sometimes|nullable|string',
+            'duration_days' => 'sometimes|integer|min:1',
             'daily_payment' => 'sometimes|boolean',
             'active' => 'sometimes|boolean',
         ]);
@@ -64,7 +69,7 @@ class MembershipController extends Controller
     public function destroy(Membership $membership)
     {
         $this->authorize('delete', $membership);
-        
+
         $membership->delete();
 
         return response()->json(null, 204);
