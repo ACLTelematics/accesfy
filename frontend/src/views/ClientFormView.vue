@@ -240,9 +240,15 @@
               <Check :size="32" class="text-green-500" />
             </div>
 
-            <h2 class="text-2xl font-bold text-white mb-2">¡Miembro Creado!</h2>
+            <h2 class="text-2xl font-bold text-white mb-2">
+              {{ isEditMode ? '¡PIN Actualizado!' : '¡Miembro Creado!' }}
+            </h2>
             <p class="text-zinc-400 mb-6">
-              El miembro ha sido registrado exitosamente. Entrega este PIN para el check-in:
+              {{
+                isEditMode
+                  ? 'El nuevo PIN ha sido generado. Entrégalo al cliente:'
+                  : 'El miembro ha sido registrado exitosamente. Entrega este PIN para el check-in:'
+              }}
             </p>
 
             <!-- PIN Display -->
@@ -351,7 +357,7 @@ const translateMembershipType = (type: string): string => {
 const fetchMemberships = async () => {
   try {
     const response = await api.get('/gym-owner/memberships')
-    memberships.value = response.data
+    memberships.value = response.data.filter((m: any) => m.active)
   } catch (error) {
     console.error('Error al cargar membresías:', error)
   }
@@ -429,19 +435,24 @@ const handleSubmit = async () => {
     }
 
     if (isEditMode.value) {
+      // MODO EDICIÓN
       if (generatedPin.value) {
+        // Solo si se generó un nuevo PIN
         payload.pin = generatedPin.value
       }
 
       await api.put(`/clients/${route.params.id}`, payload)
-      alert('Cliente actualizado exitosamente')
+      alert('✅ Cliente actualizado exitosamente')
 
       if (generatedPin.value) {
+        // Si hay nuevo PIN, mostrar modal
         showPinModal.value = true
       } else {
+        // Si no, regresar
         goBack()
       }
     } else {
+      // MODO CREACIÓN
       generatedPin.value = generateRandomPin()
       payload.pin = generatedPin.value
 
@@ -453,7 +464,7 @@ const handleSubmit = async () => {
     if (error.response?.data?.errors) {
       errors.value = error.response.data.errors
     } else {
-      alert('Error al guardar el cliente. Por favor intenta de nuevo.')
+      alert('❌ Error al guardar el cliente. Por favor intenta de nuevo.')
     }
   } finally {
     loading.value = false
@@ -508,6 +519,7 @@ const printPin = () => {
 
 const closePinModal = () => {
   showPinModal.value = false
+  generatedPin.value = ''
   goBack()
 }
 

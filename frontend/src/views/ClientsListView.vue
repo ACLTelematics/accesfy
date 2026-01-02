@@ -319,8 +319,10 @@ onMounted(() => {
               </td>
 
               <!-- Acciones -->
+              <!-- Acciones -->
               <td class="px-6 py-4">
                 <div class="flex items-center justify-end gap-2">
+                  <!-- Botón Ver -->
                   <button
                     @click="goToClientDetail(client.id)"
                     class="p-2 text-zinc-400 hover:text-[#f7c948] hover:bg-zinc-800 rounded-lg transition-all"
@@ -328,6 +330,8 @@ onMounted(() => {
                   >
                     <Eye :size="18" />
                   </button>
+
+                  <!-- Botón Editar -->
                   <button
                     v-if="canEditClient"
                     @click="goToEditClient(client.id)"
@@ -336,6 +340,8 @@ onMounted(() => {
                   >
                     <Edit2 :size="18" />
                   </button>
+
+                  <!-- Botón Eliminar -->
                   <button
                     v-if="canDeleteClient"
                     @click="deleteClient(client.id)"

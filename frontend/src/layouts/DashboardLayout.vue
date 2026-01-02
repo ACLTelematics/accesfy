@@ -37,43 +37,42 @@
       </div>
 
       <!-- Bottom Section -->
-      <div class="p-4 border-t border-zinc-800">
-        <!-- Configuración -->
+      <div class="mt-auto border-t border-zinc-800">
+        <!-- Settings Link -->
         <router-link
-          v-if="permissions.canViewSettings"
           to="/dashboard/settings"
-          :class="[
-            'flex items-center gap-3 px-4 py-3 rounded-lg transition-all mb-4 text-base font-medium',
-            $route.name === 'settings'
-              ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
-              : 'text-gray-400 hover:bg-zinc-800 hover:text-white',
-          ]"
+          class="flex items-center gap-3 px-6 py-3 text-gray-400 hover:text-white hover:bg-zinc-800 transition-all"
         >
-          <Settings class="w-6 h-6" />
-          <span>Configuración</span>
+          <Settings class="w-5 h-5" />
+          <span class="text-sm">Configuración</span>
         </router-link>
 
-        <!-- User Info -->
-        <div
-          class="flex items-center gap-3 px-3 py-3 bg-zinc-900 rounded-lg border border-zinc-800"
+        <!-- User Profile -->
+        <router-link
+          to="/dashboard/profile"
+          class="p-4 hover:bg-zinc-800/50 transition-all cursor-pointer block"
         >
-          <div
-            class="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center text-black font-bold text-sm"
-          >
-            {{ userInitials }}
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center text-black font-bold"
+            >
+              {{ userInitials }}
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-medium text-white">{{ authStore.userName || 'Usuario' }}</p>
+              <p class="text-xs text-gray-500">{{ roleName }}</p>
+            </div>
+            <ChevronRight class="w-4 h-4 text-gray-500" />
           </div>
-          <div class="flex-1">
-            <div class="text-sm font-medium text-white">{{ authStore.userName }}</div>
-            <div class="text-xs text-gray-500">{{ roleName }}</div>
-          </div>
-        </div>
+        </router-link>
 
         <!-- Logout -->
         <button
           @click="handleLogout"
-          class="w-full mt-3 px-3 py-2 text-sm text-gray-400 hover:text-red-400 transition-all text-left"
+          class="w-full px-6 py-3 text-sm text-gray-400 hover:text-red-400 hover:bg-red-900/10 transition-all text-left flex items-center gap-2"
         >
-          Cerrar Sesión
+          <LogOut class="w-4 h-4" />
+          <span>Cerrar Sesión</span>
         </button>
       </div>
     </div>
@@ -121,26 +120,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePermissions } from '@/composables/usePermissions'
 import {
   LayoutDashboard,
   Users,
-  CreditCard,
-  UsersRound,
   DollarSign,
+  UsersRound,
   Settings,
   Bell,
   Plus,
   FileText,
   Database,
+  ChevronRight,
+  LogOut,
 } from 'lucide-vue-next'
 
 const route = useRoute()
 const authStore = useAuthStore()
 const permissions = usePermissions()
+
+const notificationCount = ref(0)
 
 // Todos los items del menú con sus permisos
 const allNavItems = [
@@ -205,6 +207,9 @@ const pageTitle = computed(() => {
   if (item) return item.label
   if (route.name === 'settings') return 'Configuración'
   if (route.name === 'clients-new') return 'Nuevo Miembro'
+  if (route.name === 'client-edit') return 'Editar Miembro'
+  if (route.name === 'client-detail') return 'Detalle del Miembro'
+  if (route.name === 'staff') return 'Staff'
   return 'Dashboard'
 })
 
@@ -219,16 +224,14 @@ const userInitials = computed(() => {
 })
 
 const roleName = computed(() => {
-  const roleNames = {
+  const roleNames: Record<string, string> = {
     super_user: 'Super Admin',
     gym_owner: 'Administrador',
     staff: 'Staff',
     client: 'Cliente',
   }
-  return roleNames[authStore.userRole as keyof typeof roleNames] || 'Usuario'
+  return roleNames[authStore.userRole] || 'Usuario'
 })
-
-const notificationCount = ref(0)
 
 const handleLogout = () => {
   if (confirm('¿Estás seguro que deseas cerrar sesión?')) {

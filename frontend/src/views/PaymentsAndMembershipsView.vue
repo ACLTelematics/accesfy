@@ -250,8 +250,12 @@
                     >
                       <input
                         v-model="paymentForm.extend_membership"
+                        :disabled="paymentForm.deactivate_account"
                         type="checkbox"
-                        class="mt-1 w-5 h-5 rounded border-zinc-600 bg-zinc-700 text-green-500 focus:ring-green-500 focus:ring-offset-0"
+                        :class="[
+                          'mt-1 w-5 h-5 rounded border-zinc-600 bg-zinc-700 text-green-500 focus:ring-green-500 focus:ring-offset-0',
+                          paymentForm.deactivate_account ? 'opacity-50 cursor-not-allowed' : '',
+                        ]"
                       />
                       <div class="flex-1">
                         <p class="text-white font-medium">✅ Extender membresía +30 días</p>
@@ -266,8 +270,12 @@
                     >
                       <input
                         v-model="paymentForm.change_membership"
+                        :disabled="paymentForm.deactivate_account"
                         type="checkbox"
-                        class="mt-1 w-5 h-5 rounded border-zinc-600 bg-zinc-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
+                        :class="[
+                          'mt-1 w-5 h-5 rounded border-zinc-600 bg-zinc-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-0',
+                          paymentForm.deactivate_account ? 'opacity-50 cursor-not-allowed' : '',
+                        ]"
                       />
                       <div class="flex-1">
                         <p class="text-white font-medium">🔄 Cambiar tipo de membresía</p>
@@ -279,7 +287,11 @@
                       <select
                         v-model="paymentForm.new_membership_id"
                         @change="updateAmountFromNewMembership"
-                        class="w-full px-4 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+                        :disabled="paymentForm.deactivate_account"
+                        :class="[
+                          'w-full px-4 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-yellow-500',
+                          paymentForm.deactivate_account ? 'opacity-50 cursor-not-allowed' : '',
+                        ]"
                       >
                         <option value="">Seleccionar nueva membresía...</option>
                         <option
@@ -290,6 +302,7 @@
                           {{ translateMembershipType(membership.type) }} - ${{ membership.price }}
                         </option>
                       </select>
+
                       <p v-if="paymentForm.new_membership_id" class="text-xs text-yellow-500">
                         💡 El monto se actualizó automáticamente al precio de la nueva membresía
                       </p>
@@ -300,13 +313,14 @@
                     >
                       <input
                         v-model="paymentForm.deactivate_account"
+                        @change="handleDeactivateToggle"
                         type="checkbox"
                         class="mt-1 w-5 h-5 rounded border-zinc-600 bg-zinc-700 text-red-500 focus:ring-red-500 focus:ring-offset-0"
                       />
                       <div class="flex-1">
                         <p class="text-white font-medium">⚠️ Desactivar cuenta</p>
                         <p class="text-sm text-red-400">
-                          El cliente no podrá hacer check-in después de esta accion
+                          El cliente no podrá hacer check-in después de esta acción
                         </p>
                       </div>
                     </label>
@@ -892,6 +906,35 @@ const formatDateTime = (date: string) => {
 const isExpired = (date: string) => {
   if (!date) return true
   return new Date(date) < new Date()
+}
+
+const getClientStatus = (client: any) => {
+  if (!client.active) {
+    return {
+      label: 'Inactivo',
+      class: 'bg-red-500/20 text-red-400',
+    }
+  }
+
+  if (isExpired(client.membership_expires)) {
+    return {
+      label: 'Vencido',
+      class: 'bg-orange-500/20 text-orange-400',
+    }
+  }
+
+  return {
+    label: 'Activo',
+    class: 'bg-green-500/20 text-green-400',
+  }
+}
+
+const handleDeactivateToggle = () => {
+  if (paymentForm.value.deactivate_account) {
+    paymentForm.value.extend_membership = false
+    paymentForm.value.change_membership = false
+    paymentForm.value.new_membership_id = ''
+  }
 }
 
 onMounted(() => {

@@ -11,7 +11,7 @@ class GymOwnerController extends Controller
     public function index()
     {
         $this->authorize('viewAny', GymOwner::class);
-        
+
         $gymOwners = GymOwner::with('superUser')->get();
         return response()->json($gymOwners);
     }
@@ -39,11 +39,39 @@ class GymOwnerController extends Controller
     public function show(GymOwner $gymOwner)
     {
         $this->authorize('view', $gymOwner);
-        
+
         $gymOwner->load('superUser', 'staff', 'clients', 'memberships');
         return response()->json($gymOwner);
     }
+/**
+ * Cambiar contraseña del gym owner actual
+ */
+public function changePassword(Request $request)
+{
+    $user = $request->user();
 
+    $validated = $request->validate([
+        'current_password' => 'required|string',
+        'new_password' => 'required|string|min:6|confirmed',
+    ]);
+
+    // Verificar que la contraseña actual sea correcta
+    if (!Hash::check($validated['current_password'], $user->password)) {
+        return response()->json([
+            'message' => 'La contraseña actual es incorrecta'
+        ], 400);
+    }
+
+    // Actualizar contraseña
+    $user->update([
+        'password' => Hash::make($validated['new_password'])
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Contraseña actualizada exitosamente'
+    ]);
+}
     public function update(Request $request, GymOwner $gymOwner)
     {
         $this->authorize('update', $gymOwner);
@@ -68,7 +96,7 @@ class GymOwnerController extends Controller
     public function destroy(GymOwner $gymOwner)
     {
         $this->authorize('delete', $gymOwner);
-        
+
         $gymOwner->delete();
 
         return response()->json(null, 204);

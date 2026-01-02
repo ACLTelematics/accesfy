@@ -27,6 +27,12 @@ Route::post('auth/staff/login', [StaffAuthController::class, 'login']);
 // ============================================================================
 // AUTH ROUTES - PROTECTED
 // ============================================================================
+// Change Password Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('gym-owners/change-password', [GymOwnerController::class, 'changePassword']);
+    Route::post('staff/change-password', [StaffController::class, 'changePassword']);
+    Route::post('super-users/change-password', [SuperUserController::class, 'changePassword']);
+});
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/super-user/logout', [SuperUserAuthController::class, 'logout']);
     Route::get('auth/super-user/me', [SuperUserAuthController::class, 'me']);
