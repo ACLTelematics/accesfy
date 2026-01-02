@@ -77,7 +77,20 @@ class MembershipController extends Controller
 
     public function getByGymOwner(Request $request)
     {
-        $gymOwnerId = $request->user()->id;
+        $user = $request->user();
+
+        // Determinar gym_owner_id según el tipo de usuario
+        if ($user instanceof \App\Models\GymOwner) {
+            $gymOwnerId = $user->id;
+        } elseif ($user instanceof \App\Models\Staff) {
+            $gymOwnerId = $user->gym_owner_id;
+        } elseif ($user instanceof \App\Models\SuperUser) {
+            // SuperUser ve todas las membresías
+            $memberships = Membership::withCount('clients')->get();
+            return response()->json($memberships);
+        } else {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
 
         $memberships = Membership::where('gym_owner_id', $gymOwnerId)
             ->withCount('clients')
