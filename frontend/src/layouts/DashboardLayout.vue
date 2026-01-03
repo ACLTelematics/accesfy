@@ -40,6 +40,7 @@
       <div class="mt-auto border-t border-zinc-800">
         <!-- Settings Link -->
         <router-link
+          v-if="permissions.canViewSettings"
           to="/dashboard/settings"
           class="flex items-center gap-3 px-6 py-3 text-gray-400 hover:text-white hover:bg-zinc-800 transition-all"
         >
@@ -100,14 +101,20 @@
               </button>
             </div>
 
-            <!-- Botón Nuevo Cliente -->
+            <!-- Botón Check-in (CAMBIADO) -->
             <router-link
-              v-if="permissions.canCreateClient"
-              to="/dashboard/clients/new"
-              class="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg font-medium transition-all"
+              to="/checkin"
+              class="flex items-center gap-2 px-5 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl"
             >
-              <Plus class="w-4 h-4" />
-              Nuevo Miembro
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Check-in
             </router-link>
           </div>
         </div>
@@ -131,7 +138,6 @@ import {
   UsersRound,
   Settings,
   Bell,
-  Plus,
   FileText,
   Database,
   ChevronRight,
@@ -206,6 +212,7 @@ const pageTitle = computed(() => {
   const item = allNavItems.find((i) => i.name === route.name)
   if (item) return item.label
   if (route.name === 'settings') return 'Configuración'
+  if (route.name === 'checkin') return 'Check-in'
   if (route.name === 'clients-new') return 'Nuevo Miembro'
   if (route.name === 'client-edit') return 'Editar Miembro'
   if (route.name === 'client-detail') return 'Detalle del Miembro'

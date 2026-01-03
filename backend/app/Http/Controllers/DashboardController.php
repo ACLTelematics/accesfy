@@ -14,7 +14,21 @@ class DashboardController extends Controller
 {
     public function stats(Request $request)
     {
-        $gymOwnerId = $request->user()->gym_owner_id ?? $request->user()->id;
+        $user = $request->user();
+
+        // Determinar gym_owner_id según el tipo de usuario
+        if ($user instanceof \App\Models\GymOwner) {
+            $gymOwnerId = $user->id;
+        } elseif ($user instanceof \App\Models\Staff) {
+            $gymOwnerId = $user->gym_owner_id;
+        } else {
+            return response()->json([
+                'active_members' => 0,
+                'accesses_today' => 0,
+                'current_occupancy' => 0,
+                'expiring_soon' => 0,
+            ]);
+        }
 
         $stats = [
             'active_members' => Client::where('gym_owner_id', $gymOwnerId)
@@ -22,15 +36,17 @@ class DashboardController extends Controller
                 ->where('membership_expires', '>', now())
                 ->count(),
 
-            'accesses_today' => Attendance::whereHas('client', function ($q) use ($gymOwnerId) {
-                $q->where('gym_owner_id', $gymOwnerId);
-            })
+            'accesses_today' => Attendance::query()
+                ->whereHas('client', function ($q) use ($gymOwnerId) {
+                    $q->where('gym_owner_id', $gymOwnerId);
+                })
                 ->whereDate('check_in', today())
                 ->count(),
 
-            'current_occupancy' => Attendance::whereHas('client', function ($q) use ($gymOwnerId) {
-                $q->where('gym_owner_id', $gymOwnerId);
-            })
+            'current_occupancy' => Attendance::query()
+                ->whereHas('client', function ($q) use ($gymOwnerId) {
+                    $q->where('gym_owner_id', $gymOwnerId);
+                })
                 ->whereDate('check_in', today())
                 ->whereNull('check_out')
                 ->count(),
@@ -46,9 +62,19 @@ class DashboardController extends Controller
 
     public function recentActivity(Request $request)
     {
-        $gymOwnerId = $request->user()->gym_owner_id ?? $request->user()->id;
+        $user = $request->user();
 
-        $activities = Attendance::with('client')
+        // Determinar gym_owner_id según el tipo de usuario
+        if ($user instanceof \App\Models\GymOwner) {
+            $gymOwnerId = $user->id;
+        } elseif ($user instanceof \App\Models\Staff) {
+            $gymOwnerId = $user->gym_owner_id;
+        } else {
+            return response()->json([]);
+        }
+
+        $activities = Attendance::query()
+            ->with('client')
             ->whereHas('client', function ($q) use ($gymOwnerId) {
                 $q->where('gym_owner_id', $gymOwnerId);
             })
@@ -68,7 +94,16 @@ class DashboardController extends Controller
 
     public function expiringMembers(Request $request)
     {
-        $gymOwnerId = $request->user()->gym_owner_id ?? $request->user()->id;
+        $user = $request->user();
+
+        // Determinar gym_owner_id según el tipo de usuario
+        if ($user instanceof \App\Models\GymOwner) {
+            $gymOwnerId = $user->id;
+        } elseif ($user instanceof \App\Models\Staff) {
+            $gymOwnerId = $user->gym_owner_id;
+        } else {
+            return response()->json([]);
+        }
 
         $members = Client::where('gym_owner_id', $gymOwnerId)
             ->where('active', true)
@@ -81,7 +116,7 @@ class DashboardController extends Controller
                     'id' => $client->id,
                     'name' => $client->name,
                     'membership_expires' => $client->membership_expires->format('Y-m-d'),
-                    'days_left' => max(0, $daysLeft),
+                    'days_left' => max(0, (int)$daysLeft),
                 ];
             });
 
@@ -90,10 +125,20 @@ class DashboardController extends Controller
 
     public function membershipDistribution(Request $request)
     {
-        $gymOwnerId = $request->user()->gym_owner_id ?? $request->user()->id;
+        $user = $request->user();
 
-        $distribution = Client::where('gym_owner_id', $gymOwnerId)
-            ->where('active', true)
+        // Determinar gym_owner_id según el tipo de usuario
+        if ($user instanceof \App\Models\GymOwner) {
+            $gymOwnerId = $user->id;
+        } elseif ($user instanceof \App\Models\Staff) {
+            $gymOwnerId = $user->gym_owner_id;
+        } else {
+            return response()->json([]);
+        }
+
+        $distribution = Client::where('clients.gym_owner_id', $gymOwnerId)
+            ->where('clients.active', true)
+            ->whereNotNull('clients.membership_id')
             ->join('memberships', 'clients.membership_id', '=', 'memberships.id')
             ->select('memberships.type', DB::raw('count(*) as count'))
             ->groupBy('memberships.type')
@@ -104,18 +149,32 @@ class DashboardController extends Controller
 
     public function peakHours(Request $request)
     {
-        $gymOwnerId = $request->user()->gym_owner_id ?? $request->user()->id;
+        $user = $request->user();
 
-        $peakHours = Attendance::whereHas('client', function ($q) use ($gymOwnerId) {
-            $q->where('gym_owner_id', $gymOwnerId);
-        })
+        // Determinar gym_owner_id según el tipo de usuario
+        if ($user instanceof \App\Models\GymOwner) {
+            $gymOwnerId = $user->id;
+        } elseif ($user instanceof \App\Models\Staff) {
+            $gymOwnerId = $user->gym_owner_id;
+        } else {
+            return response()->json([]);
+        }
+
+        // ✅ POSTGRESQL: Usar EXTRACT en lugar de HOUR()
+        $peakHours = Attendance::query()
+            ->whereHas('client', function ($q) use ($gymOwnerId) {
+                $q->where('gym_owner_id', $gymOwnerId);
+            })
             ->whereDate('check_in', '>=', now()->subDays(7))
-            ->select(DB::raw('HOUR(check_in) as hour'), DB::raw('count(*) as count'))
+            ->select(
+                DB::raw('EXTRACT(HOUR FROM check_in) as hour'),  // ← CORREGIDO
+                DB::raw('count(*) as count')
+            )
             ->groupBy('hour')
             ->orderBy('hour')
             ->get()
             ->map(function ($item) {
-                $hour = $item->hour;
+                $hour = (int)$item->hour;
                 if ($hour >= 6 && $hour < 10) $range = '6-10am';
                 elseif ($hour >= 10 && $hour < 14) $range = '10am-2pm';
                 elseif ($hour >= 14 && $hour < 18) $range = '2-6pm';
@@ -133,10 +192,20 @@ class DashboardController extends Controller
 
     public function genderDistribution(Request $request)
     {
-        $gymOwnerId = $request->user()->gym_owner_id ?? $request->user()->id;
+        $user = $request->user();
+
+        // Determinar gym_owner_id según el tipo de usuario
+        if ($user instanceof \App\Models\GymOwner) {
+            $gymOwnerId = $user->id;
+        } elseif ($user instanceof \App\Models\Staff) {
+            $gymOwnerId = $user->gym_owner_id;
+        } else {
+            return response()->json([]);
+        }
 
         $distribution = Client::where('gym_owner_id', $gymOwnerId)
             ->where('active', true)
+            ->whereNotNull('gender')
             ->select('gender', DB::raw('count(*) as count'))
             ->groupBy('gender')
             ->get()
@@ -152,4 +221,4 @@ class DashboardController extends Controller
 
         return response()->json($distribution);
     }
-} // ← ✅ LLAVE QUE FALTABA
+}

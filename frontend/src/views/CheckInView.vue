@@ -337,10 +337,9 @@ const resetForm = () => {
   }, 100)
 }
 
-// Salir
 const handleExit = () => {
   if (confirm('¿Salir del sistema de check-in?')) {
-    router.push('/dashboard')
+    authStore.logout()
   }
 }
 
