@@ -71,11 +71,12 @@ Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::get('gym-owner/staff', [StaffController::class, 'getByGymOwner']);
 });
 
-// ============================================================================
+
 // CLIENT ROUTES
 // ============================================================================
 Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::get('clients/search', [ClientController::class, 'search']);
+    Route::post('clients/couple', [ClientController::class, 'storeCouple']); // ← Antes del apiResource
     Route::apiResource('clients', ClientController::class);
 });
 
@@ -145,4 +146,10 @@ Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::post('settings', [SettingsController::class, 'update']);
     Route::get('settings/{key}', [SettingsController::class, 'get']);
     Route::post('settings/logo', [SettingsController::class, 'uploadLogo']);
+});
+Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
+    Route::get('clients/search', [ClientController::class, 'search']);
+    Route::post('clients/couple', [ClientController::class, 'storeCouple']);
+    Route::post('clients/{client}/break-couple-link', [ClientController::class, 'breakCoupleLink']); // ← Nueva
+    Route::apiResource('clients', ClientController::class);
 });
