@@ -284,7 +284,7 @@ const handleSubmit = async () => {
     state.value = 'validating'
 
     const response = await api.post('/attendances/check-in-biometric', {
-      pin: pin.value,
+      pin: pin.value, // ✅ Correcto
     })
 
     if (response.data.success) {

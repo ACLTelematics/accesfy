@@ -82,33 +82,49 @@ class AttendanceController extends Controller
         return response()->json($attendance);
     }
 
+    /**
+     * Check-in con PIN o huella digital
+     */
     public function checkInBiometric(Request $request)
     {
         $validated = $request->validate([
-            'pin_hash' => 'nullable|string',
-            'fingerprint_hash' => 'nullable|string',
+            'pin' => 'nullable|string',
+            'fingerprint' => 'nullable|string',
         ]);
 
-        // Buscar cliente por PIN o huella
-        $client = Client::where(function ($query) use ($validated) {
-            if (isset($validated['pin_hash'])) {
-                $query->where('pin_hash', $validated['pin_hash']);
+        // Buscar TODOS los clientes activos
+        $clients = Client::where('active', true)->get();
+
+        $client = null;
+
+        // Buscar por PIN (validando con Hash::check)
+        if (isset($validated['pin'])) {
+            foreach ($clients as $c) {
+                if ($c->pin_hash && \Hash::check($validated['pin'], $c->pin_hash)) {
+                    $client = $c;
+                    break;
+                }
             }
-            if (isset($validated['fingerprint_hash'])) {
-                $query->orWhere('fingerprint_hash', $validated['fingerprint_hash']);
+        }
+
+        // Buscar por huella digital (validando con Hash::check)
+        if (!$client && isset($validated['fingerprint'])) {
+            foreach ($clients as $c) {
+                if ($c->fingerprint_hash && \Hash::check($validated['fingerprint'], $c->fingerprint_hash)) {
+                    $client = $c;
+                    break;
+                }
             }
-        })
-        ->where('active', true)
-        ->first();
+        }
 
         if (!$client) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cliente no encontrado o inactivo'
+                'message' => 'PIN o huella incorrectos'
             ], 404);
         }
 
-        // Verificar membresía
+        // Verificar membresía vencida
         if ($client->membership_expires && $client->membership_expires < now()) {
             return response()->json([
                 'success' => false,
@@ -120,7 +136,7 @@ class AttendanceController extends Controller
             ], 403);
         }
 
-        // Verificar si ya tiene check-in activo
+        // Verificar si ya tiene check-in hoy
         $activeAttendance = Attendance::where('client_id', $client->id)
             ->whereDate('check_in', today())
             ->first();
@@ -128,7 +144,7 @@ class AttendanceController extends Controller
         if ($activeAttendance) {
             return response()->json([
                 'success' => false,
-                'message' => 'Ya tiene un acceso activo hoy',
+                'message' => 'Ya tiene un acceso registrado hoy',
                 'client' => [
                     'name' => $client->name,
                     'check_in' => $activeAttendance->check_in->format('H:i'),
@@ -136,7 +152,7 @@ class AttendanceController extends Controller
             ], 400);
         }
 
-        // Registrar check-in
+        // Registrar check-in exitoso
         $attendance = Attendance::create([
             'client_id' => $client->id,
             'staff_id' => null,

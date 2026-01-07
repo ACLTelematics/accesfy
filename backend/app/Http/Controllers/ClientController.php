@@ -38,52 +38,63 @@ class ClientController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:150',
-            'email' => 'nullable|email|unique:clients,email',
-            'phone' => 'nullable|string|max:50',
-            'gender' => 'nullable|in:male,female,other',
-            'membership_id' => 'nullable|exists:memberships,id',
-            'is_couple' => 'boolean',
-            'related_client_id' => 'nullable|exists:clients,id',
-            'pin' => 'nullable|string|size:4',
-            'biometric_enabled' => 'boolean',
-        ]);
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:150',
+        'email' => 'nullable|email|unique:clients,email',
+        'phone' => 'nullable|string|max:50',
+        'gender' => 'nullable|in:male,female,other',
+        'membership_id' => 'nullable|exists:memberships,id',
+        'is_couple' => 'boolean',
+        'related_client_id' => 'nullable|exists:clients,id',
+        'pin' => 'nullable|string|size:4',
+        'biometric_enabled' => 'boolean',
+    ]);
 
-        $user = $request->user();
+    $user = $request->user();
 
-        if ($user instanceof \App\Models\GymOwner) {
-            $gymOwnerId = $user->id;
-        } elseif ($user instanceof \App\Models\Staff) {
-            $gymOwnerId = $user->gym_owner_id;
-        } elseif ($user instanceof \App\Models\SuperUser) {
-            if (!$request->has('gym_owner_id')) {
-                return response()->json(['error' => 'SuperUser debe especificar gym_owner_id'], 400);
-            }
-            $gymOwnerId = $request->gym_owner_id;
-        } else {
-            return response()->json(['error' => 'Unauthorized'], 403);
+    if ($user instanceof \App\Models\GymOwner) {
+        $gymOwnerId = $user->id;
+    } elseif ($user instanceof \App\Models\Staff) {
+        $gymOwnerId = $user->gym_owner_id;
+    } elseif ($user instanceof \App\Models\SuperUser) {
+        if (!$request->has('gym_owner_id')) {
+            return response()->json(['error' => 'SuperUser debe especificar gym_owner_id'], 400);
         }
-
-        $validated['gym_owner_id'] = $gymOwnerId;
-        $validated['active'] = true;
-
-        // ✨ NUEVA LÓGICA: Calcular fecha de expiración automáticamente
-        if (isset($validated['membership_id'])) {
-            $membership = Membership::find($validated['membership_id']);
-            $validated['membership_expires'] = now()->addDays($membership->duration_days);
-        }
-
-        if (isset($validated['pin'])) {
-            $validated['pin_hash'] = Hash::make($validated['pin']);
-            unset($validated['pin']);
-        }
-
-        $client = Client::create($validated);
-
-        return response()->json($client->load('membership'), 201);
+        $gymOwnerId = $request->gym_owner_id;
+    } else {
+        return response()->json(['error' => 'Unauthorized'], 403);
     }
+
+    $validated['gym_owner_id'] = $gymOwnerId;
+    $validated['active'] = true;
+
+    // Calcular fecha de expiración automáticamente
+    if (isset($validated['membership_id'])) {
+        $membership = Membership::find($validated['membership_id']);
+        $validated['membership_expires'] = now()->addDays($membership->duration_days);
+    }
+
+    // ✨ GENERAR PIN AUTOMÁTICAMENTE
+    $pin = null;
+    if (isset($validated['pin'])) {
+        // Si viene PIN en request, usarlo
+        $pin = $validated['pin'];
+        $validated['pin_hash'] = Hash::make($pin);
+        unset($validated['pin']);
+    } else {
+        // Si NO viene PIN, generar uno automáticamente
+        $pin = str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+        $validated['pin_hash'] = Hash::make($pin);
+    }
+
+    $client = Client::create($validated);
+
+    return response()->json([
+        'client' => $client->load('membership'),
+        'pin' => $pin  // ← DEVOLVER EL PIN
+    ], 201);
+}
 
     public function show(Client $client)
     {
