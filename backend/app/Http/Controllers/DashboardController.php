@@ -221,4 +221,43 @@ class DashboardController extends Controller
 
         return response()->json($distribution);
     }
+/**
+ * Obtener asistencias con fechas ISO para reportes
+ * (No usa diffForHumans como recentActivity)
+ */
+public function attendancesForReports(Request $request)
+{
+    $user = $request->user();
+
+    // Determinar gym_owner_id según el tipo de usuario
+    if ($user instanceof \App\Models\GymOwner) {
+        $gymOwnerId = $user->id;
+    } elseif ($user instanceof \App\Models\Staff) {
+        $gymOwnerId = $user->gym_owner_id;
+    } else {
+        return response()->json([]);
+    }
+
+    // ✅ Retornar con fechas ISO reales, NO texto relativo
+    $attendances = Attendance::query()
+        ->with('client')
+        ->whereHas('client', function ($q) use ($gymOwnerId) {
+            $q->where('gym_owner_id', $gymOwnerId);
+        })
+        ->orderBy('check_in', 'desc')
+        ->get()
+        ->map(function ($attendance) {
+            return [
+                'id' => $attendance->id,
+                'client_id' => $attendance->client_id,
+                'client_name' => $attendance->client->name ?? 'N/A',
+                'check_in' => $attendance->check_in->toISOString(),  // ✅ Fecha ISO
+                'check_out' => $attendance->check_out ? $attendance->check_out->toISOString() : null,
+                'status' => $attendance->check_out ? 'completed' : 'active',
+            ];
+        });
+
+    return response()->json($attendances);
+}
+
 }

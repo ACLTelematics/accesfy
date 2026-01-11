@@ -204,8 +204,13 @@
 
     <!-- Footer -->
     <footer class="bg-zinc-950 border-t border-zinc-800 px-6 py-4">
-      <div class="max-w-7xl mx-auto text-center text-zinc-500 text-sm">
-        <p>ACCESFY © 2024 - Sistema de Gestión de Gimnasios</p>
+      <div class="max-w-7xl mx-auto text-center text-sm">
+        <p class="mb-1">
+          <span class="text-[#f7c948] font-semibold">ACCESFY</span>
+          <span class="text-zinc-500"> by </span>
+          <span class="font-semibold" style="color: #03a9f4">ACLTelematics</span>
+        </p>
+        <p class="text-zinc-500 text-xs">Sistema de Gestión de Gimnasios</p>
       </div>
     </footer>
   </div>

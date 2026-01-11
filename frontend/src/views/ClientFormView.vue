@@ -24,6 +24,36 @@
       </div>
     </div>
 
+    <!-- Alerta de Pareja Vinculada -->
+    <div v-if="isEditingCouple" class="mb-8">
+      <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6">
+        <div class="flex items-start justify-between gap-6">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-2">
+              <AlertCircle :size="20" class="text-yellow-500" />
+              <h3 class="text-lg font-semibold text-white">Membresía Pareja</h3>
+            </div>
+            <p class="text-zinc-300 mb-3">
+              Este miembro está vinculado con: <strong class="text-white">{{ partnerName }}</strong>
+            </p>
+            <p class="text-zinc-400 text-sm">
+              Para editar o registrar un pago individual, primero debe convertirse a membresía
+              individual.
+            </p>
+          </div>
+
+          <button
+            @click="showUnlinkModal = true"
+            type="button"
+            class="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg font-semibold transition-all flex items-center gap-2 whitespace-nowrap"
+          >
+            <Unlock :size="18" />
+            Registrar como Individual
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Form Card -->
     <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-8">
       <form @submit.prevent="handleSubmit">
@@ -64,7 +94,8 @@
                   v-model="formData.name"
                   type="text"
                   required
-                  class="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-[#f7c948] transition-colors"
+                  :disabled="isEditingCouple"
+                  class="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-[#f7c948] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Ej: Juan Pérez"
                 />
                 <p v-if="errors.name" class="text-red-500 text-sm mt-1">{{ errors.name }}</p>
@@ -79,7 +110,8 @@
                   <input
                     v-model="formData.email"
                     type="email"
-                    class="w-full pl-10 pr-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-[#f7c948] transition-colors"
+                    :disabled="isEditingCouple"
+                    class="w-full pl-10 pr-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-[#f7c948] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="ejemplo@correo.com"
                   />
                 </div>
@@ -95,7 +127,8 @@
                   <input
                     v-model="formData.phone"
                     type="tel"
-                    class="w-full pl-10 pr-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-[#f7c948] transition-colors"
+                    :disabled="isEditingCouple"
+                    class="w-full pl-10 pr-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-[#f7c948] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="1234567890"
                   />
                 </div>
@@ -105,7 +138,8 @@
                 <label class="block text-sm font-medium text-zinc-300 mb-2">Género</label>
                 <select
                   v-model="formData.gender"
-                  class="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-[#f7c948] transition-colors"
+                  :disabled="isEditingCouple"
+                  class="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-[#f7c948] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">Seleccionar...</option>
                   <option value="male">Masculino</option>
@@ -131,7 +165,8 @@
                 <select
                   v-model="formData.membership_id"
                   required
-                  class="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-[#f7c948] transition-colors"
+                  :disabled="isEditingCouple"
+                  class="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-[#f7c948] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">Seleccionar membresía...</option>
                   <option
@@ -435,7 +470,7 @@
           <button
             type="submit"
             class="px-6 py-3 bg-[#f7c948] text-black rounded-lg hover:bg-[#FFDB5C] transition-colors font-medium flex items-center gap-2"
-            :disabled="loading"
+            :disabled="loading || isEditingCouple"
           >
             <Loader v-if="loading" :size="18" class="animate-spin" />
             <Save v-else :size="18" />
@@ -537,6 +572,134 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Modal: Desvincular Pareja -->
+    <Teleport to="body">
+      <div
+        v-if="showUnlinkModal && !unlinkResult"
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        @click.self="showUnlinkModal = false"
+      >
+        <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-8 max-w-lg w-full">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-white">Registrar como Membresía Individual</h3>
+            <button @click="showUnlinkModal = false" class="text-gray-400 hover:text-white">
+              <X :size="20" />
+            </button>
+          </div>
+
+          <div class="space-y-4 mb-6">
+            <div class="p-4 bg-zinc-800 rounded-lg">
+              <p class="text-zinc-300 mb-3">Se convertirán en membresías individuales:</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span class="text-white">{{ clientData?.name }} → Individual (nuevo PIN)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span class="text-white">{{ partnerName }} → Individual (nuevo PIN)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <div class="flex gap-3">
+                <AlertCircle :size="20" class="text-blue-400 flex-shrink-0 mt-0.5" />
+                <div class="text-sm text-blue-200">
+                  <p class="font-medium mb-1">Importante:</p>
+                  <ul class="list-disc list-inside space-y-1">
+                    <li>Ambos miembros quedarán activos hasta su fecha de vencimiento actual</li>
+                    <li>Se generarán nuevos PINs individuales para cada uno</li>
+                    <li>Podrán renovar por separado cuando venzan</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              @click="showUnlinkModal = false"
+              class="flex-1 px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              @click="unlinkCouple"
+              :disabled="unlinkingCouple"
+              class="flex-1 px-4 py-3 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Loader v-if="unlinkingCouple" :size="18" class="animate-spin" />
+              <span>{{ unlinkingCouple ? 'Desvinculando...' : 'Confirmar' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Resultado de Desvinculación -->
+      <div
+        v-if="unlinkResult"
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      >
+        <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-8 max-w-lg w-full">
+          <div class="text-center mb-6">
+            <div
+              class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4"
+            >
+              <Check :size="32" class="text-green-500" />
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2">¡Desvinculación Exitosa!</h2>
+            <p class="text-zinc-400">Ambos miembros ahora tienen membresías individuales</p>
+          </div>
+
+          <!-- Nuevos PINs -->
+          <div class="space-y-4 mb-6">
+            <div
+              v-for="(pin, name) in unlinkResult.new_pins"
+              :key="name"
+              class="bg-zinc-800 rounded-lg p-4"
+            >
+              <p class="text-sm text-zinc-400 mb-2">{{ name }}</p>
+              <div class="flex items-center justify-between">
+                <p class="text-3xl font-bold text-yellow-500 tracking-wider">{{ pin }}</p>
+                <button
+                  @click="
+                    () => {
+                      navigator.clipboard.writeText(pin)
+                      alert('PIN copiado: ' + pin)
+                    }
+                  "
+                  class="px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg text-sm transition-all flex items-center gap-2"
+                >
+                  <Copy :size="16" />
+                  Copiar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg mb-6">
+            <p class="text-sm text-yellow-200">
+              ⚠️ Asegúrate de entregar los nuevos PINs a cada miembro
+            </p>
+          </div>
+
+          <button
+            @click="
+              () => {
+                unlinkResult = null
+                showUnlinkModal = false
+                goBack()
+              }
+            "
+            class="w-full px-4 py-3 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg font-semibold transition-all"
+          >
+            Entendido
+          </button>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -558,6 +721,9 @@ import {
   Check,
   Copy,
   Printer,
+  Unlock,
+  AlertCircle,
+  X,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -573,6 +739,12 @@ const generatedPin = ref('')
 const copied = ref(false)
 const isCouple = ref(false)
 const createdCouple = ref<any>(null)
+
+// Estado para desvinculación
+const partnerData = ref<any>(null)
+const showUnlinkModal = ref(false)
+const unlinkingCouple = ref(false)
+const unlinkResult = ref<any>(null)
 
 // Form Data Individual
 const formData = ref({
@@ -606,9 +778,19 @@ const isEditMode = computed(() => !!route.params.id)
 const coupleMemberships = computed(() => {
   return memberships.value.filter((m: any) => m.type === 'couple')
 })
+
 const individualMemberships = computed(() => {
   return memberships.value.filter((m: any) => m.type !== 'couple')
 })
+
+const isEditingCouple = computed(() => {
+  return isEditMode.value && clientData.value?.is_couple && clientData.value?.related_client_id
+})
+
+const partnerName = computed(() => {
+  return partnerData.value?.name || 'Cargando...'
+})
+
 // Traducir tipos
 const translateMembershipType = (type: string): string => {
   const translations: Record<string, string> = {
@@ -657,6 +839,36 @@ const fetchClient = async () => {
     goBack()
   } finally {
     loading.value = false
+  }
+}
+
+const fetchPartner = async () => {
+  if (!isEditingCouple.value) return
+
+  try {
+    const response = await api.get(`/clients/${clientData.value.related_client_id}`)
+    partnerData.value = response.data
+  } catch (error) {
+    console.error('Error al cargar partner:', error)
+  }
+}
+
+const unlinkCouple = async () => {
+  try {
+    unlinkingCouple.value = true
+
+    const response = await api.post(`/clients/${clientData.value.id}/break-couple-link`, {
+      option: 'both_individual',
+    })
+
+    unlinkResult.value = response.data
+    await fetchClient()
+  } catch (error: any) {
+    console.error('Error al desvincular:', error)
+    alert(error.response?.data?.message || 'Error al desvincular pareja')
+    showUnlinkModal.value = false
+  } finally {
+    unlinkingCouple.value = false
   }
 }
 
@@ -822,8 +1034,12 @@ const goBack = () => {
   router.push('/dashboard/clients')
 }
 
-onMounted(() => {
-  fetchMemberships()
-  fetchClient()
+onMounted(async () => {
+  await fetchMemberships()
+  await fetchClient()
+
+  if (isEditingCouple.value) {
+    await fetchPartner()
+  }
 })
 </script>

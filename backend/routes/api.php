@@ -153,3 +153,15 @@ Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
     Route::post('clients/{client}/break-couple-link', [ClientController::class, 'breakCoupleLink']); // ← Nueva
     Route::apiResource('clients', ClientController::class);
 });
+// ============================================================================
+// DASHBOARD ROUTES
+// ============================================================================
+Route::middleware(['auth:sanctum', 'gym.expiration'])->group(function () {
+    Route::get('dashboard/stats', [DashboardController::class, 'stats']);
+    Route::get('dashboard/recent-activity', [DashboardController::class, 'recentActivity']);
+    Route::get('dashboard/expiring-members', [DashboardController::class, 'expiringMembers']);
+    Route::get('dashboard/membership-distribution', [DashboardController::class, 'membershipDistribution']);
+    Route::get('dashboard/peak-hours', [DashboardController::class, 'peakHours']);
+    Route::get('dashboard/gender-distribution', [DashboardController::class, 'genderDistribution']);
+    Route::get('dashboard/attendances-for-reports', [DashboardController::class, 'attendancesForReports']); // ✅ NUEVA
+});
