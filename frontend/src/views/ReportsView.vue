@@ -805,10 +805,37 @@ const calculateStats = (payments: any[], attendances: any[], clients: any[]) => 
   const totalClients = clients.length
   stats.value.retention = totalClients > 0 ? Math.round((activeClients / totalClients) * 100) : 0
 
+  // ✅ Detectar campo de fecha correcto para asistencias
+  let filteredAttendances: any[] = []
+  if (attendances && attendances.length > 0) {
+    const possibleDateFields = [
+      'check_in',
+      'checked_in',
+      'checkin',
+      'check_in_time',
+      'created_at',
+      'attendance_date',
+    ]
+    const dateField = possibleDateFields.find((field) => attendances[0][field] !== undefined)
+
+    console.log('🔍 Campo de fecha detectado para stats:', dateField)
+
+    if (dateField) {
+      filteredAttendances = filterByPeriod(attendances, dateField)
+    }
+  }
+
   // Promedio diario de asistencias
   const days = getDaysInPeriod()
-  const filteredAttendances = filterByPeriod(attendances, 'check_in')
   stats.value.dailyAverage = days > 0 ? Math.round(filteredAttendances.length / days) : 0
+
+  console.log('📊 Stats calculadas:', {
+    retention: stats.value.retention,
+    dailyAverage: stats.value.dailyAverage,
+    averageIncome: stats.value.averageIncome,
+    attendances: filteredAttendances.length,
+    days: days,
+  })
 
   // Ingreso promedio por cliente
   const filteredPayments = filterByPeriod(payments, 'payment_date')
@@ -959,59 +986,90 @@ const filterByPeriod = (data: any[], dateField: string) => {
 
     switch (selectedPeriod.value) {
       case 'today': {
-        const todayStart = new Date(now)
-        todayStart.setHours(0, 0, 0, 0)
+        // Usar UTC para comparaciones
+        const todayStartUTC = new Date(
+          Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0),
+        )
+        const todayEndUTC = new Date(
+          Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+        )
 
-        const todayEnd = new Date(now)
-        todayEnd.setHours(23, 59, 59, 999)
-
-        return itemDate >= todayStart && itemDate <= todayEnd
+        return itemDate >= todayStartUTC && itemDate <= todayEndUTC
       }
 
       case 'week': {
-        const weekAgo = new Date(now)
-        weekAgo.setDate(now.getDate() - 7)
-        weekAgo.setHours(0, 0, 0, 0)
-        return itemDate >= weekAgo
+        // Últimos 7 días desde hoy
+        const weekAgoUTC = new Date(
+          Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() - 7, 0, 0, 0, 0),
+        )
+        const todayEndUTC = new Date(
+          Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+        )
+
+        return itemDate >= weekAgoUTC && itemDate <= todayEndUTC
       }
 
       case 'month': {
-        const itemMonth = itemDate.getMonth()
-        const itemYear = itemDate.getFullYear()
-        const nowMonth = now.getMonth()
-        const nowYear = now.getFullYear()
+        // Mismo mes y año (sin importar zona horaria)
+        const itemYear = itemDate.getUTCFullYear()
+        const itemMonth = itemDate.getUTCMonth()
+        const nowYear = now.getUTCFullYear()
+        const nowMonth = now.getUTCMonth()
 
-        return itemMonth === nowMonth && itemYear === nowYear
+        return itemYear === nowYear && itemMonth === nowMonth
       }
 
       case 'quarter': {
-        const itemMonth = itemDate.getMonth()
-        const itemYear = itemDate.getFullYear()
-        const nowMonth = now.getMonth()
-        const nowYear = now.getFullYear()
+        // Mismo trimestre y año
+        const itemYear = itemDate.getUTCFullYear()
+        const itemMonth = itemDate.getUTCMonth()
+        const nowYear = now.getUTCFullYear()
+        const nowMonth = now.getUTCMonth()
 
-        const currentQuarter = Math.floor(nowMonth / 3)
         const itemQuarter = Math.floor(itemMonth / 3)
+        const nowQuarter = Math.floor(nowMonth / 3)
 
-        return itemQuarter === currentQuarter && itemYear === nowYear
+        return itemYear === nowYear && itemQuarter === nowQuarter
       }
 
       case 'year': {
-        const itemYear = itemDate.getFullYear()
-        const nowYear = now.getFullYear()
+        // Mismo año
+        const itemYear = itemDate.getUTCFullYear()
+        const nowYear = now.getUTCFullYear()
 
         return itemYear === nowYear
       }
 
       case 'custom': {
         if (customRange.value.from && customRange.value.to) {
-          const from = new Date(customRange.value.from)
-          from.setHours(0, 0, 0, 0)
+          // Convertir fechas seleccionadas a UTC
+          const fromParts = customRange.value.from.split('-')
+          const toParts = customRange.value.to.split('-')
 
-          const to = new Date(customRange.value.to)
-          to.setHours(23, 59, 59, 999)
+          const fromUTC = new Date(
+            Date.UTC(
+              parseInt(fromParts[0]),
+              parseInt(fromParts[1]) - 1,
+              parseInt(fromParts[2]),
+              0,
+              0,
+              0,
+              0,
+            ),
+          )
+          const toUTC = new Date(
+            Date.UTC(
+              parseInt(toParts[0]),
+              parseInt(toParts[1]) - 1,
+              parseInt(toParts[2]),
+              23,
+              59,
+              59,
+              999,
+            ),
+          )
 
-          return itemDate >= from && itemDate <= to
+          return itemDate >= fromUTC && itemDate <= toUTC
         }
         return true
       }
@@ -1023,7 +1081,6 @@ const filterByPeriod = (data: any[], dateField: string) => {
 
   return filtered
 }
-
 const getDaysInPeriod = () => {
   const now = new Date()
   switch (selectedPeriod.value) {
