@@ -376,7 +376,6 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
@@ -545,19 +544,6 @@ const loadReports = async () => {
     // ✅ Esperar otro tick para asegurar que los canvas existan
     await nextTick()
 
-    // ✅✅✅ LOGS CRÍTICOS ANTES DE GENERAR GRÁFICAS ✅✅✅
-    console.log('🎨 ========================================')
-    console.log('🎨 A PUNTO DE GENERAR GRÁFICAS (después de loading=false)')
-    console.log('🎨 Canvas incomeChart existe?:', !!incomeChart.value)
-    console.log('🎨 Canvas attendanceChart existe?:', !!attendanceChart.value)
-    if (incomeChart.value) {
-      console.log('🎨 Canvas incomeChart:', incomeChart.value)
-    }
-    if (attendanceChart.value) {
-      console.log('🎨 Canvas attendanceChart:', attendanceChart.value)
-    }
-    console.log('🎨 ========================================')
-
     // Ahora sí generar las gráficas con los datos ya cargados
     try {
       const gymOwnerId = authStore.user?.gym_owner_id || authStore.user?.id
@@ -567,7 +553,6 @@ const loadReports = async () => {
       ])
 
       generateCharts(paymentsRes.data || [], attendancesRes.data || [])
-      console.log('🎨 ✅ generateCharts() ejecutado')
     } catch (chartError) {
       console.error('❌ Error generando gráficas:', chartError)
     }
@@ -597,7 +582,7 @@ const calculateOccupancy = (attendances: any[]) => {
   const avgDailyAttendance = days > 0 ? filtered.length / days : 0
 
   // Capacidad estimada del gimnasio (ajusta según tu gimnasio)
-  const gymCapacity = 50 // ✅ Cambia este número a la capacidad real de tu gym
+  const gymCapacity = 50
 
   const occupancy = gymCapacity > 0 ? Math.round((avgDailyAttendance / gymCapacity) * 100) : 0
   kpis.value[3].value = `${Math.min(occupancy, 100)}%`
@@ -679,20 +664,11 @@ const processPayments = (payments: any[]) => {
 }
 
 const processAttendances = (attendances: any[]) => {
-  console.log('🚪 ========== INICIO processAttendances ==========')
-  console.log('🚪 Total recibido:', attendances?.length || 0)
-
   if (!attendances || attendances.length === 0) {
-    console.log('⚠️ No hay asistencias para procesar')
     kpis.value[1].value = '0'
     return
   }
 
-  // DEBUGGING: Ver estructura del primer objeto
-  console.log('🚪 Primera asistencia completa:', JSON.stringify(attendances[0], null, 2))
-  console.log('🚪 Campos disponibles:', Object.keys(attendances[0]))
-
-  // Intentar detectar el campo de fecha correcto
   const possibleDateFields = [
     'check_in',
     'checked_in',
@@ -703,8 +679,6 @@ const processAttendances = (attendances: any[]) => {
   ]
   const dateField = possibleDateFields.find((field) => attendances[0][field] !== undefined)
 
-  console.log('🚪 Campo de fecha detectado:', dateField)
-
   if (!dateField) {
     console.error('❌ No se encontró ningún campo de fecha válido en las asistencias')
     kpis.value[1].value = '0'
@@ -712,21 +686,7 @@ const processAttendances = (attendances: any[]) => {
   }
 
   const filtered = filterByPeriod(attendances, dateField)
-
-  console.log('🚪 Asistencias después de filtro:', filtered.length, 'de', attendances.length)
-  console.log('🚪 Período seleccionado:', selectedPeriod.value)
-
-  if (filtered.length > 0) {
-    console.log('🚪 Primera asistencia filtrada:', filtered[0])
-  } else {
-    console.log('⚠️ No hay asistencias en el período seleccionado')
-    if (attendances.length > 0) {
-      console.log('🚪 Fecha de la primera asistencia:', attendances[0][dateField])
-    }
-  }
-
   kpis.value[1].value = filtered.length.toString()
-  console.log('🚪 ========== FIN processAttendances ==========')
 }
 
 const processTopClients = (clients: any[], attendances: any[]) => {
@@ -800,10 +760,21 @@ const calculateStats = (payments: any[], attendances: any[], clients: any[]) => 
     return
   }
 
-  // Retención (clientes activos / total)
+  // ✅ OPCIÓN 2: Retención = (Clientes que pagaron en el período / Clientes activos) × 100
   const activeClients = clients.filter((c) => c.active).length
-  const totalClients = clients.length
-  stats.value.retention = totalClients > 0 ? Math.round((activeClients / totalClients) * 100) : 0
+
+  // Obtener IDs únicos de clientes que pagaron en el período
+  const filteredPayments = filterByPeriod(payments, 'payment_date')
+  const clientsWhoPaid = new Set(filteredPayments.map((p) => p.client_id).filter((id) => id))
+  const renewedClients = clientsWhoPaid.size
+
+  stats.value.retention = activeClients > 0 ? Math.round((renewedClients / activeClients) * 100) : 0
+
+  console.log('📊 Retención calculada:', {
+    activeClients,
+    renewedClients,
+    retention: stats.value.retention + '%',
+  })
 
   // ✅ Detectar campo de fecha correcto para asistencias
   let filteredAttendances: any[] = []
@@ -818,8 +789,6 @@ const calculateStats = (payments: any[], attendances: any[], clients: any[]) => 
     ]
     const dateField = possibleDateFields.find((field) => attendances[0][field] !== undefined)
 
-    console.log('🔍 Campo de fecha detectado para stats:', dateField)
-
     if (dateField) {
       filteredAttendances = filterByPeriod(attendances, dateField)
     }
@@ -829,27 +798,12 @@ const calculateStats = (payments: any[], attendances: any[], clients: any[]) => 
   const days = getDaysInPeriod()
   stats.value.dailyAverage = days > 0 ? Math.round(filteredAttendances.length / days) : 0
 
-  console.log('📊 Stats calculadas:', {
-    retention: stats.value.retention,
-    dailyAverage: stats.value.dailyAverage,
-    averageIncome: stats.value.averageIncome,
-    attendances: filteredAttendances.length,
-    days: days,
-  })
-
   // Ingreso promedio por cliente
-  const filteredPayments = filterByPeriod(payments, 'payment_date')
   const totalIncome = filteredPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)
   stats.value.averageIncome = activeClients > 0 ? Math.round(totalIncome / activeClients) : 0
 }
 
 const generateCharts = (payments: any[], attendances: any[]) => {
-  console.log('📊 ========== INICIO generateCharts ==========')
-  console.log('📊 Payments recibidos:', payments.length)
-  console.log('📊 Attendances recibidas:', attendances.length)
-  console.log('📊 incomeChart.value:', incomeChart.value)
-  console.log('📊 attendanceChart.value:', attendanceChart.value)
-
   // Destruir charts anteriores
   if (incomeChartInstance) {
     incomeChartInstance.destroy()
@@ -866,9 +820,6 @@ const generateCharts = (payments: any[], attendances: any[]) => {
     if (ctx) {
       const filteredPayments = filterByPeriod(payments, 'payment_date')
       const incomeData = aggregateByMonth(filteredPayments, 'payment_date', 'amount')
-
-      console.log('💰 Chart Ingresos - Labels:', incomeData.labels)
-      console.log('💰 Chart Ingresos - Values:', incomeData.values)
 
       incomeChartInstance = new Chart(ctx, {
         type: 'bar',
@@ -903,12 +854,7 @@ const generateCharts = (payments: any[], attendances: any[]) => {
           },
         },
       })
-      console.log('✅ Chart de ingresos creado')
-    } else {
-      console.error('❌ No se pudo obtener contexto 2D del canvas de ingresos')
     }
-  } else {
-    console.error('❌ incomeChart.value es null')
   }
 
   // Chart de asistencias
@@ -916,16 +862,7 @@ const generateCharts = (payments: any[], attendances: any[]) => {
     const ctx = attendanceChart.value.getContext('2d')
     if (ctx) {
       const filteredAttendances = filterByPeriod(attendances, 'check_in')
-
-      console.log('📊 Chart Asistencias - Total filtradas:', filteredAttendances.length)
-      if (filteredAttendances.length > 0) {
-        console.log('📊 Primera asistencia filtrada:', filteredAttendances[0])
-      }
-
       const attendanceData = aggregateByDay(filteredAttendances, 'check_in')
-
-      console.log('📊 Chart Asistencias - Labels:', attendanceData.labels)
-      console.log('📊 Chart Asistencias - Values:', attendanceData.values)
 
       attendanceChartInstance = new Chart(ctx, {
         type: 'line',
@@ -962,15 +899,8 @@ const generateCharts = (payments: any[], attendances: any[]) => {
           },
         },
       })
-      console.log('✅ Chart de asistencias creado')
-    } else {
-      console.error('❌ No se pudo obtener contexto 2D del canvas de asistencias')
     }
-  } else {
-    console.error('❌ attendanceChart.value es null')
   }
-
-  console.log('📊 ========== FIN generateCharts ==========')
 }
 
 const filterByPeriod = (data: any[], dateField: string) => {
@@ -986,66 +916,53 @@ const filterByPeriod = (data: any[], dateField: string) => {
 
     switch (selectedPeriod.value) {
       case 'today': {
-        // Usar UTC para comparaciones
         const todayStartUTC = new Date(
           Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0),
         )
         const todayEndUTC = new Date(
           Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
         )
-
         return itemDate >= todayStartUTC && itemDate <= todayEndUTC
       }
 
       case 'week': {
-        // Últimos 7 días desde hoy
         const weekAgoUTC = new Date(
           Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() - 7, 0, 0, 0, 0),
         )
         const todayEndUTC = new Date(
           Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
         )
-
         return itemDate >= weekAgoUTC && itemDate <= todayEndUTC
       }
 
       case 'month': {
-        // Mismo mes y año (sin importar zona horaria)
         const itemYear = itemDate.getUTCFullYear()
         const itemMonth = itemDate.getUTCMonth()
         const nowYear = now.getUTCFullYear()
         const nowMonth = now.getUTCMonth()
-
         return itemYear === nowYear && itemMonth === nowMonth
       }
 
       case 'quarter': {
-        // Mismo trimestre y año
         const itemYear = itemDate.getUTCFullYear()
         const itemMonth = itemDate.getUTCMonth()
         const nowYear = now.getUTCFullYear()
         const nowMonth = now.getUTCMonth()
-
         const itemQuarter = Math.floor(itemMonth / 3)
         const nowQuarter = Math.floor(nowMonth / 3)
-
         return itemYear === nowYear && itemQuarter === nowQuarter
       }
 
       case 'year': {
-        // Mismo año
         const itemYear = itemDate.getUTCFullYear()
         const nowYear = now.getUTCFullYear()
-
         return itemYear === nowYear
       }
 
       case 'custom': {
         if (customRange.value.from && customRange.value.to) {
-          // Convertir fechas seleccionadas a UTC
           const fromParts = customRange.value.from.split('-')
           const toParts = customRange.value.to.split('-')
-
           const fromUTC = new Date(
             Date.UTC(
               parseInt(fromParts[0]),
@@ -1068,7 +985,6 @@ const filterByPeriod = (data: any[], dateField: string) => {
               999,
             ),
           )
-
           return itemDate >= fromUTC && itemDate <= toUTC
         }
         return true
@@ -1081,19 +997,27 @@ const filterByPeriod = (data: any[], dateField: string) => {
 
   return filtered
 }
+
 const getDaysInPeriod = () => {
   const now = new Date()
+
   switch (selectedPeriod.value) {
     case 'today':
       return 1
     case 'week':
       return 7
     case 'month':
-      return 30
-    case 'quarter':
-      return 90
-    case 'year':
-      return 365
+      return now.getDate()
+    case 'quarter': {
+      const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)
+      const diff = now.getTime() - quarterStart.getTime()
+      return Math.ceil(diff / (1000 * 60 * 60 * 24)) || 1
+    }
+    case 'year': {
+      const yearStart = new Date(now.getFullYear(), 0, 1)
+      const diff = now.getTime() - yearStart.getTime()
+      return Math.ceil(diff / (1000 * 60 * 60 * 24)) || 1
+    }
     case 'custom':
       if (customRange.value.from && customRange.value.to) {
         const from = new Date(customRange.value.from)
