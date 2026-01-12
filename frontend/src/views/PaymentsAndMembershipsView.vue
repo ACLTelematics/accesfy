@@ -237,7 +237,6 @@
                       class="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-yellow-500 resize-none"
                     ></textarea>
                   </div>
-
                   <!-- Opciones de Acción -->
                   <div class="p-4 bg-zinc-800/50 rounded-lg space-y-3">
                     <h4 class="text-sm font-medium text-gray-300 flex items-center gap-2">
@@ -245,16 +244,20 @@
                       Opciones al Registrar
                     </h4>
 
+                    <!-- ✅ CHECKBOX 1: EXTENDER MEMBRESÍA -->
                     <label
                       class="flex items-start gap-3 cursor-pointer group p-3 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-all"
                     >
                       <input
                         v-model="paymentForm.extend_membership"
-                        :disabled="paymentForm.deactivate_account"
+                        @change="handleExtendToggle"
+                        :disabled="paymentForm.deactivate_account || paymentForm.change_membership"
                         type="checkbox"
                         :class="[
                           'mt-1 w-5 h-5 rounded border-zinc-600 bg-zinc-700 text-green-500 focus:ring-green-500 focus:ring-offset-0',
-                          paymentForm.deactivate_account ? 'opacity-50 cursor-not-allowed' : '',
+                          paymentForm.deactivate_account || paymentForm.change_membership
+                            ? 'opacity-50 cursor-not-allowed'
+                            : '',
                         ]"
                       />
                       <div class="flex-1">
@@ -265,16 +268,20 @@
                       </div>
                     </label>
 
+                    <!-- ✅ CHECKBOX 2: CAMBIAR MEMBRESÍA -->
                     <label
                       class="flex items-start gap-3 cursor-pointer group p-3 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-all"
                     >
                       <input
                         v-model="paymentForm.change_membership"
-                        :disabled="paymentForm.deactivate_account"
+                        @change="handleChangeMembershipToggle"
+                        :disabled="paymentForm.deactivate_account || paymentForm.extend_membership"
                         type="checkbox"
                         :class="[
                           'mt-1 w-5 h-5 rounded border-zinc-600 bg-zinc-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-0',
-                          paymentForm.deactivate_account ? 'opacity-50 cursor-not-allowed' : '',
+                          paymentForm.deactivate_account || paymentForm.extend_membership
+                            ? 'opacity-50 cursor-not-allowed'
+                            : '',
                         ]"
                       />
                       <div class="flex-1">
@@ -283,6 +290,7 @@
                       </div>
                     </label>
 
+                    <!-- Dropdown de nueva membresía -->
                     <div v-if="paymentForm.change_membership" class="ml-8 mt-2 space-y-2">
                       <select
                         v-model="paymentForm.new_membership_id"
@@ -308,14 +316,21 @@
                       </p>
                     </div>
 
+                    <!-- ✅ CHECKBOX 3: DESACTIVAR CUENTA -->
                     <label
                       class="flex items-start gap-3 cursor-pointer group p-3 bg-zinc-800 rounded-lg hover:bg-red-900/20 transition-all border border-transparent hover:border-red-500/30"
                     >
                       <input
                         v-model="paymentForm.deactivate_account"
                         @change="handleDeactivateToggle"
+                        :disabled="paymentForm.extend_membership || paymentForm.change_membership"
                         type="checkbox"
-                        class="mt-1 w-5 h-5 rounded border-zinc-600 bg-zinc-700 text-red-500 focus:ring-red-500 focus:ring-offset-0"
+                        :class="[
+                          'mt-1 w-5 h-5 rounded border-zinc-600 bg-zinc-700 text-red-500 focus:ring-red-500 focus:ring-offset-0',
+                          paymentForm.extend_membership || paymentForm.change_membership
+                            ? 'opacity-50 cursor-not-allowed'
+                            : '',
+                        ]"
                       />
                       <div class="flex-1">
                         <p class="text-white font-medium">⚠️ Desactivar cuenta</p>
@@ -325,216 +340,215 @@
                       </div>
                     </label>
                   </div>
-
-                  <div class="flex gap-3 pt-4 border-t border-zinc-800">
-                    <button
-                      @click="closePaymentForm"
-                      type="button"
-                      class="flex-1 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-all"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      @click="registerPayment"
-                      :disabled="loading || !paymentForm.amount"
-                      class="flex-1 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      <Loader v-if="loading" class="w-5 h-5 animate-spin" />
-                      <Check v-else class="w-5 h-5" />
-                      {{ loading ? 'Registrando...' : 'Registrar Pago' }}
-                    </button>
-                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Sidebar: Últimos Pagos -->
-          <div class="col-span-1">
-            <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6 sticky top-6">
-              <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Clock class="w-5 h-5" />
-                Últimos Pagos
-              </h3>
-
-              <div v-if="recentPayments.length === 0" class="text-center py-8 text-gray-500">
-                No hay pagos recientes
-              </div>
-
-              <div v-else class="space-y-3">
-                <div
-                  v-for="payment in recentPayments"
-                  :key="payment.id"
-                  class="p-3 bg-zinc-800 rounded-lg"
-                >
-                  <p class="font-medium text-white text-sm">
-                    {{ payment.client?.name || 'Cliente eliminado' }}
-                  </p>
-                  <div class="flex justify-between items-center mt-1">
-                    <span class="text-xs text-gray-400">{{ translateMethod(payment.method) }}</span>
-                    <span class="text-sm font-semibold text-green-400">${{ payment.amount }}</span>
-                  </div>
-                  <p class="text-xs text-gray-500 mt-1">{{ formatDateTime(payment.created_at) }}</p>
+                <div class="flex gap-3 pt-4 border-t border-zinc-800">
+                  <button
+                    @click="closePaymentForm"
+                    type="button"
+                    class="flex-1 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    @click="registerPayment"
+                    :disabled="loading || !paymentForm.amount"
+                    class="flex-1 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <Loader v-if="loading" class="w-5 h-5 animate-spin" />
+                    <Check v-else class="w-5 h-5" />
+                    {{ loading ? 'Registrando...' : 'Registrar Pago' }}
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- TAB 2: GESTIONAR MEMBRESÍAS -->
-      <div v-if="activeTab === 'memberships'" class="space-y-6">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-semibold text-white">Tipos de Membresía</h3>
-            <p class="text-sm text-gray-400">
-              {{ memberships.filter((m) => m.active).length }} activas
-            </p>
-          </div>
+        <!-- Sidebar: Últimos Pagos -->
+        <div class="col-span-1">
+          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6 sticky top-6">
+            <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <Clock class="w-5 h-5" />
+              Últimos Pagos
+            </h3>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div
-              v-for="membership in memberships"
-              :key="membership.id"
-              class="p-6 bg-zinc-800 border border-zinc-700 rounded-lg"
-            >
-              <div class="flex items-start justify-between mb-4">
-                <div>
-                  <h4 class="text-lg font-semibold text-white">
-                    {{ translateMembershipType(membership.type) }}
-                  </h4>
-                  <p class="text-sm text-gray-400">{{ membership.duration_days }} días</p>
-                </div>
-                <button
-                  @click="toggleMembershipActive(membership)"
-                  :class="[
-                    'px-3 py-1 rounded-full text-xs font-medium transition-all',
-                    membership.active
-                      ? 'bg-green-500/20 text-green-400'
-                      : 'bg-gray-500/20 text-gray-400',
-                  ]"
-                >
-                  {{ membership.active ? 'Activa' : 'Inactiva' }}
-                </button>
-              </div>
-
-              <div class="space-y-3">
-                <div>
-                  <label class="block text-xs text-gray-500 mb-1">Precio</label>
-                  <div class="flex gap-2">
-                    <input
-                      v-model="membership.price"
-                      type="number"
-                      step="0.01"
-                      :disabled="!canEditMembershipPrice"
-                      :class="[
-                        'flex-1 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-white focus:outline-none',
-                        canEditMembershipPrice
-                          ? 'focus:border-yellow-500'
-                          : 'opacity-50 cursor-not-allowed',
-                      ]"
-                    />
-                    <button
-                      v-if="canEditMembershipPrice"
-                      @click="updateMembershipPrice(membership)"
-                      class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded font-medium transition-all"
-                    >
-                      <Save class="w-4 h-4" />
-                    </button>
-                    <div
-                      v-else
-                      class="px-4 py-2 bg-zinc-700 text-gray-400 rounded flex items-center"
-                      title="Solo el propietario puede modificar precios"
-                    >
-                      <Lock class="w-4 h-4" />
-                    </div>
-                  </div>
-                  <p v-if="!canEditMembershipPrice" class="text-xs text-amber-500 mt-1">
-                    🔒 Solo el propietario puede modificar precios
-                  </p>
-                </div>
-
-                <div>
-                  <label class="block text-xs text-gray-500 mb-1">Descripción</label>
-                  <p class="text-sm text-gray-400">
-                    {{ membership.description || 'Sin descripción' }}
-                  </p>
-                </div>
-
-                <div class="flex items-center justify-between pt-3 border-t border-zinc-700">
-                  <span class="text-xs text-gray-500">Clientes usando</span>
-                  <span class="text-sm font-semibold text-yellow-500">{{
-                    membership.clients_count || 0
-                  }}</span>
-                </div>
-              </div>
+            <div v-if="recentPayments.length === 0" class="text-center py-8 text-gray-500">
+              No hay pagos recientes
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- TAB 3: HISTORIAL -->
-      <div v-if="activeTab === 'history'" class="space-y-6">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-semibold text-white">Historial de Pagos</h3>
-
-            <div class="flex gap-3">
-              <select
-                v-model="historyFilters.method"
-                class="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-yellow-500"
+            <div v-else class="space-y-3">
+              <div
+                v-for="payment in recentPayments"
+                :key="payment.id"
+                class="p-3 bg-zinc-800 rounded-lg"
               >
-                <option value="">Todos los métodos</option>
-                <option value="cash">Efectivo</option>
-                <option value="card">Tarjeta</option>
-                <option value="transfer">Transferencia</option>
-                <option value="other">Otro</option>
-              </select>
-
-              <input
-                v-model="historyFilters.dateFrom"
-                type="date"
-                class="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-yellow-500"
-              />
+                <p class="font-medium text-white text-sm">
+                  {{ payment.client?.name || 'Cliente eliminado' }}
+                </p>
+                <div class="flex justify-between items-center mt-1">
+                  <span class="text-xs text-gray-400">{{ translateMethod(payment.method) }}</span>
+                  <span class="text-sm font-semibold text-green-400">${{ payment.amount }}</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">{{ formatDateTime(payment.created_at) }}</p>
+              </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
 
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead>
-                <tr class="border-b border-zinc-800">
-                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-400">Cliente</th>
-                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-400">Monto</th>
-                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-400">Método</th>
-                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-400">Fecha</th>
-                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-400">Nota</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="payment in filteredPayments"
-                  :key="payment.id"
-                  class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-all"
-                >
-                  <td class="py-3 px-4 text-sm text-white">{{ payment.client?.name || 'N/A' }}</td>
-                  <td class="py-3 px-4 text-sm font-semibold text-green-400">
-                    ${{ payment.amount }}
-                  </td>
-                  <td class="py-3 px-4 text-sm text-gray-400">
-                    {{ translateMethod(payment.method) }}
-                  </td>
-                  <td class="py-3 px-4 text-sm text-gray-400">
-                    {{ formatDate(payment.payment_date) }}
-                  </td>
-                  <td class="py-3 px-4 text-sm text-gray-400">{{ payment.note || '-' }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+    <!-- TAB 2: GESTIONAR MEMBRESÍAS -->
+    <div v-if="activeTab === 'memberships'" class="space-y-6">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-white">Tipos de Membresía</h3>
+          <p class="text-sm text-gray-400">
+            {{ memberships.filter((m) => m.active).length }} activas
+          </p>
+        </div>
 
-          <div v-if="filteredPayments.length === 0" class="text-center py-12 text-gray-500">
-            No hay pagos registrados
+        <div class="grid grid-cols-2 gap-4">
+          <div
+            v-for="membership in memberships"
+            :key="membership.id"
+            class="p-6 bg-zinc-800 border border-zinc-700 rounded-lg"
+          >
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <h4 class="text-lg font-semibold text-white">
+                  {{ translateMembershipType(membership.type) }}
+                </h4>
+                <p class="text-sm text-gray-400">{{ membership.duration_days }} días</p>
+              </div>
+              <button
+                @click="toggleMembershipActive(membership)"
+                :class="[
+                  'px-3 py-1 rounded-full text-xs font-medium transition-all',
+                  membership.active
+                    ? 'bg-green-500/20 text-green-400'
+                    : 'bg-gray-500/20 text-gray-400',
+                ]"
+              >
+                {{ membership.active ? 'Activa' : 'Inactiva' }}
+              </button>
+            </div>
+
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Precio</label>
+                <div class="flex gap-2">
+                  <input
+                    v-model="membership.price"
+                    type="number"
+                    step="0.01"
+                    :disabled="!canEditMembershipPrice"
+                    :class="[
+                      'flex-1 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-white focus:outline-none',
+                      canEditMembershipPrice
+                        ? 'focus:border-yellow-500'
+                        : 'opacity-50 cursor-not-allowed',
+                    ]"
+                  />
+                  <button
+                    v-if="canEditMembershipPrice"
+                    @click="updateMembershipPrice(membership)"
+                    class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded font-medium transition-all"
+                  >
+                    <Save class="w-4 h-4" />
+                  </button>
+                  <div
+                    v-else
+                    class="px-4 py-2 bg-zinc-700 text-gray-400 rounded flex items-center"
+                    title="Solo el propietario puede modificar precios"
+                  >
+                    <Lock class="w-4 h-4" />
+                  </div>
+                </div>
+                <p v-if="!canEditMembershipPrice" class="text-xs text-amber-500 mt-1">
+                  🔒 Solo el propietario puede modificar precios
+                </p>
+              </div>
+
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Descripción</label>
+                <p class="text-sm text-gray-400">
+                  {{ membership.description || 'Sin descripción' }}
+                </p>
+              </div>
+
+              <div class="flex items-center justify-between pt-3 border-t border-zinc-700">
+                <span class="text-xs text-gray-500">Clientes usando</span>
+                <span class="text-sm font-semibold text-yellow-500">{{
+                  membership.clients_count || 0
+                }}</span>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: HISTORIAL -->
+    <div v-if="activeTab === 'history'" class="space-y-6">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-white">Historial de Pagos</h3>
+
+          <div class="flex gap-3">
+            <select
+              v-model="historyFilters.method"
+              class="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-yellow-500"
+            >
+              <option value="">Todos los métodos</option>
+              <option value="cash">Efectivo</option>
+              <option value="card">Tarjeta</option>
+              <option value="transfer">Transferencia</option>
+              <option value="other">Otro</option>
+            </select>
+
+            <input
+              v-model="historyFilters.dateFrom"
+              type="date"
+              class="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-yellow-500"
+            />
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-zinc-800">
+                <th class="text-left py-3 px-4 text-sm font-semibold text-gray-400">Cliente</th>
+                <th class="text-left py-3 px-4 text-sm font-semibold text-gray-400">Monto</th>
+                <th class="text-left py-3 px-4 text-sm font-semibold text-gray-400">Método</th>
+                <th class="text-left py-3 px-4 text-sm font-semibold text-gray-400">Fecha</th>
+                <th class="text-left py-3 px-4 text-sm font-semibold text-gray-400">Nota</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="payment in filteredPayments"
+                :key="payment.id"
+                class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-all"
+              >
+                <td class="py-3 px-4 text-sm text-white">{{ payment.client?.name || 'N/A' }}</td>
+                <td class="py-3 px-4 text-sm font-semibold text-green-400">
+                  ${{ payment.amount }}
+                </td>
+                <td class="py-3 px-4 text-sm text-gray-400">
+                  {{ translateMethod(payment.method) }}
+                </td>
+                <td class="py-3 px-4 text-sm text-gray-400">
+                  {{ formatDate(payment.payment_date) }}
+                </td>
+                <td class="py-3 px-4 text-sm text-gray-400">{{ payment.note || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-if="filteredPayments.length === 0" class="text-center py-12 text-gray-500">
+          No hay pagos registrados
         </div>
       </div>
     </div>
@@ -658,6 +672,34 @@ const closePaymentForm = () => {
     change_membership: false,
     new_membership_id: '',
     deactivate_account: false,
+  }
+}
+const handleExtendToggle = () => {
+  if (paymentForm.value.extend_membership) {
+    // Si activas "Extender", desactiva las otras dos opciones
+    paymentForm.value.change_membership = false
+    paymentForm.value.deactivate_account = false
+    paymentForm.value.new_membership_id = ''
+  }
+}
+
+const handleChangeMembershipToggle = () => {
+  if (paymentForm.value.change_membership) {
+    // Si activas "Cambiar membresía", desactiva las otras dos opciones
+    paymentForm.value.extend_membership = false
+    paymentForm.value.deactivate_account = false
+  } else {
+    // Si desactivas "Cambiar membresía", limpia la selección
+    paymentForm.value.new_membership_id = ''
+  }
+}
+
+const handleDeactivateToggle = () => {
+  if (paymentForm.value.deactivate_account) {
+    // Si activas "Desactivar", desactiva las otras dos opciones
+    paymentForm.value.extend_membership = false
+    paymentForm.value.change_membership = false
+    paymentForm.value.new_membership_id = ''
   }
 }
 
@@ -926,14 +968,6 @@ const getClientStatus = (client: any) => {
   return {
     label: 'Activo',
     class: 'bg-green-500/20 text-green-400',
-  }
-}
-
-const handleDeactivateToggle = () => {
-  if (paymentForm.value.deactivate_account) {
-    paymentForm.value.extend_membership = false
-    paymentForm.value.change_membership = false
-    paymentForm.value.new_membership_id = ''
   }
 }
 
