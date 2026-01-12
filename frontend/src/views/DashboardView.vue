@@ -66,41 +66,41 @@
       </div>
 
       <!-- Main Content Grid -->
+      <!-- Main Content Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <!-- Hourly Access Chart -->
         <div class="lg:col-span-2 bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
           <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold text-white">Accesos por Hora</h2>
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+              <Clock class="w-5 h-5 text-orange-400" />
+              Accesos por Hora
+            </h2>
             <div class="flex items-center gap-2 text-sm text-gray-400">
-              <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+              <div class="w-3 h-3 bg-orange-500 rounded-full"></div>
               <span>Últimos 7 días</span>
             </div>
           </div>
 
-          <div v-if="peakHours.length > 0" class="flex items-end justify-between h-64 gap-2">
-            <div
-              v-for="(item, idx) in peakHours"
-              :key="idx"
-              class="flex-1 flex flex-col items-center gap-2"
-            >
-              <div class="relative w-full flex-1 flex items-end">
+          <div v-if="peakHours.length > 0" class="space-y-3">
+            <div v-for="hour in peakHours" :key="hour.range" class="flex items-center gap-3">
+              <span class="text-zinc-400 text-sm w-32">{{ formatHourRange(hour.range) }}</span>
+              <div class="flex-1 h-10 bg-zinc-800/50 rounded-lg overflow-hidden relative">
                 <div
-                  :style="{ height: `${(item.count / maxPeakCount) * 100}%` }"
-                  class="w-full bg-gradient-to-t from-yellow-500 to-yellow-600 rounded-t-lg transition-all duration-500 hover:from-yellow-400 hover:to-yellow-500 cursor-pointer group"
+                  class="h-full bg-gradient-to-r from-orange-500 to-yellow-500 transition-all duration-1000 ease-out hover:from-orange-400 hover:to-yellow-400"
+                  :style="{ width: `${(hour.count / maxPeakCount) * 100}%` }"
+                ></div>
+                <span
+                  class="absolute inset-0 flex items-center justify-center text-white text-sm font-medium"
                 >
-                  <div
-                    class="absolute -top-8 left-1/2 -translate-x-1/2 text-xs font-semibold text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    {{ item.count }}
-                  </div>
-                </div>
+                  {{ hour.count }} {{ hour.count === 1 ? 'visita' : 'visitas' }}
+                </span>
               </div>
-              <span class="text-xs text-gray-500 font-medium">{{ item.range }}</span>
             </div>
           </div>
 
-          <div v-else class="h-64 flex items-center justify-center text-gray-500">
-            No hay datos disponibles
+          <div v-else class="h-64 flex flex-col items-center justify-center text-gray-500">
+            <Clock class="w-12 h-12 mb-3 opacity-30" />
+            <p>No hay datos de accesos disponibles</p>
           </div>
         </div>
 
@@ -202,13 +202,13 @@
     </template>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import api from '@/services/api'
-import { Users, Activity, Dumbbell, Calendar, CreditCard } from 'lucide-vue-next'
+import { Users, Activity, Dumbbell, Calendar, CreditCard, Clock } from 'lucide-vue-next'
 import DonutChart from '@/components/DonutChart.vue'
 
+// ...
 interface Stats {
   active_members: number
   accesses_today: number
@@ -255,24 +255,71 @@ const maxPeakCount = computed(() => {
   return Math.max(...peakHours.value.map((h) => h.count))
 })
 
+// ✅ Funciones de traducción
+const translateMembershipType = (type: string): string => {
+  const translations: Record<string, string> = {
+    daily: 'Diario',
+    weekly: 'Semanal',
+    biweekly: 'Quincenal',
+    monthly: 'Mensual',
+    quarterly: 'Trimestral',
+    annual: 'Anual',
+    visit: 'Visita',
+    student: 'Estudiante',
+    couple: 'Pareja',
+    individual: 'Individual',
+  }
+  return translations[type.toLowerCase()] || type
+}
+
+const translateGender = (gender: string): string => {
+  const translations: Record<string, string> = {
+    male: 'Masculino',
+    female: 'Femenino',
+    other: 'Otro',
+    prefer_not_to_say: 'Prefiero no decir',
+  }
+  return translations[gender.toLowerCase()] || gender
+}
+
+const formatHourRange = (range: string): string => {
+  // Convertir "6-10pm" → "6:00 - 10:00" o "10am-2pm" → "10:00 - 14:00"
+  const match = range.match(/(\d+)(am|pm)?-(\d+)(am|pm)/)
+  if (match) {
+    const [, start, startPeriod, end, endPeriod] = match
+    let startHour = parseInt(start)
+    let endHour = parseInt(end)
+
+    // Ajustar AM/PM
+    if (startPeriod === 'pm' && startHour !== 12) startHour += 12
+    if (startPeriod === 'am' && startHour === 12) startHour = 0
+
+    if (endPeriod === 'pm' && endHour !== 12) endHour += 12
+    if (endPeriod === 'am' && endHour === 12) endHour = 0
+
+    return `${startHour.toString().padStart(2, '0')}:00 - ${endHour.toString().padStart(2, '0')}:00`
+  }
+  return range
+}
+
 // Datos para gráficas circulares
 const membershipChartData = computed(() => {
   return membershipDistribution.value.map((item) => ({
-    label: item.type.charAt(0).toUpperCase() + item.type.slice(1),
+    label: translateMembershipType(item.type),
     value: item.count,
   }))
 })
 
 const genderChartData = computed(() => {
   return Object.entries(genderDistribution.value).map(([label, value]) => ({
-    label,
+    label: translateGender(label),
     value,
   }))
 })
 
 const peakHoursChartData = computed(() => {
   return peakHours.value.map((item) => ({
-    label: item.range,
+    label: formatHourRange(item.range),
     value: item.count,
   }))
 })

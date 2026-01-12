@@ -798,9 +798,15 @@ const calculateStats = (payments: any[], attendances: any[], clients: any[]) => 
   const days = getDaysInPeriod()
   stats.value.dailyAverage = days > 0 ? Math.round(filteredAttendances.length / days) : 0
 
-  // Ingreso promedio por cliente
+  // ✅ OPCIÓN 2: Ingreso promedio = Total ingresos / Clientes que pagaron en el período
   const totalIncome = filteredPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)
-  stats.value.averageIncome = activeClients > 0 ? Math.round(totalIncome / activeClients) : 0
+  stats.value.averageIncome = renewedClients > 0 ? Math.round(totalIncome / renewedClients) : 0
+
+  console.log('💰 Ingreso promedio calculado:', {
+    totalIncome,
+    renewedClients,
+    averageIncome: stats.value.averageIncome,
+  })
 }
 
 const generateCharts = (payments: any[], attendances: any[]) => {
